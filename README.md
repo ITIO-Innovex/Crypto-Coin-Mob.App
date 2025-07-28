@@ -10,36 +10,25 @@ Create your wallet and start your crypto journey today! 🚀
 
 ## 📸 Screenshots
 
-### 🔐 Authentication & Wallet Creation  
-![Wallet Creation](ScreenShots/login.png)
+<div align="center">
+  <img src="ScreenShots/login.png" alt="Login" width="250"/>
+  <img src="ScreenShots/AddWallet.png" alt="Add Wallet" width="250"/>
+</div>
 
-### 🔐 Authentication & Wallet Creation  
-![Wallet Creation](ScreenShots/AddWallet.png)
+<div align="center">
+  <img src="ScreenShots/Dashboard.png" alt="Dashboard" width="250"/>
+  <img src="ScreenShots/TradingChart.png" alt="Trading Chart" width="250"/>
+</div>
 
-### 📊 Dashboard / Portfolio View  
-![Dashboard](ScreenShots/Dashboard.png)
+<div align="center">
+  <img src="ScreenShots/WalletList.png" alt="Wallet List" width="250"/>
+  <img src="ScreenShots/TransactionList.png" alt="Transaction List" width="250"/>
+</div>
 
-### 💱 Crypto Trading Screen  
-![Trading](ScreenShots/TradingChart.png)
-
-### 📱 WalletList View  
-![Mobile View](ScreenShots/WalletList.png)
-
-### 📱 TransactionList  
-![Mobile View](ScreenShots/TransactionList.png)
-
-### 📱 SettingsPage  
-![Mobile View](ScreenShots/SettingsPage.png)
-
-### 🔐 Add Funds 
-![Wallet Creation](ScreenShots/AddFunds.png)
-
-### 🔐 Authentication & Wallet Creation  
-![Wallet Creation](ScreenShots/login.png)
-
-
-### 📱 SettingsPage  
-![Mobile View](ScreenShots/WalletList.png)
+<div align="center">
+  <img src="ScreenShots/SettingsPage.png" alt="Settings Page" width="250"/>
+  <img src="ScreenShots/AddFunds.png" alt="Add Funds" width="250"/>
+</div>
 
 ---
 
