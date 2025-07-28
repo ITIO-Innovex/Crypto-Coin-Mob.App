@@ -1,16 +1,87 @@
-# coincraze
+# 🪙 CoinCraze - Your All-in-One Crypto Platform
 
-A new Flutter project.
+**CoinCraze** is your complete solution for trading, buying, and securely storing cryptocurrencies.  
+Create your wallet and start your crypto journey today! 🚀
 
-## Getting Started
+🌐 **Live Demo**: [CoinCraze App](https://vikas-web.github.io/CoinCrazeLandingPage/)  
+📱 **Built With Flutter (Frontend) + Node.js (Backend) + MongoDB (Database)**
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## 📸 Screenshots
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### 🔐 Authentication & Wallet Creation  
+![Wallet Creation](ScreenShots/login.png)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### 🔐 Authentication & Wallet Creation  
+![Wallet Creation](ScreenShots/AddWallet.png)
+
+### 📊 Dashboard / Portfolio View  
+![Dashboard](ScreenShots/Dashboard.png)
+
+### 💱 Crypto Trading Screen  
+![Trading](ScreenShots/TradingChart.png)
+
+### 📱 WalletList View  
+![Mobile View](ScreenShots/WalletList.png)
+
+### 📱 TransactionList  
+![Mobile View](ScreenShots/TransactionList.png)
+
+### 📱 SettingsPage  
+![Mobile View](ScreenShots/SettingsPage.png)
+
+### 🔐 Add Funds 
+![Wallet Creation](ScreenShots/AddFunds.png)
+
+### 🔐 Authentication & Wallet Creation  
+![Wallet Creation](ScreenShots/login.png)
+
+
+### 📱 SettingsPage  
+![Mobile View](ScreenShots/WalletList.png)
+
+---
+
+## 🧱 Tech Stack
+
+| Layer       | Tech             |
+|-------------|------------------|
+| Frontend    | Flutter (Dart)   |
+| Backend     | Node.js + Express.js |
+| Database    | MongoDB (Mongoose) |
+| Auth        | JWT (Token-Based Auth) |
+| APIs        | CoinGecko/CoinMarketCap (if used) |
+| Deployment  | [Optional] Render / Firebase / Vercel / Heroku |
+
+---
+
+## ⚙️ Features
+
+- 🔐 Secure User Authentication (JWT)
+- 🧾 Wallet Creation & Management
+- 📈 Real-time Crypto Prices & Charts
+- 💱 Buy/Sell Functionality (Demo/Real)
+- 🧠 Smart UI built with Flutter
+- 📱 100% Responsive Mobile App UI
+- 📊 Portfolio Tracking
+- 🔧 Backend APIs with Node.js
+
+---
+
+## 📦 Installation & Setup
+
+### 🧩 Prerequisites
+- Flutter SDK
+- Node.js (v18+)
+- MongoDB (local or cloud like MongoDB Atlas)
+
+---
+
+### 🚀 Backend Setup (`/server`)
+
+```bash
+cd server
+npm install
+# Configure .env
+npm run dev
