@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:intl/intl.dart';
 
 class NewKYC extends StatefulWidget {
   const NewKYC({super.key});
@@ -20,22 +21,39 @@ class NewKYC extends StatefulWidget {
   _NewKYCState createState() => _NewKYCState();
 }
 
-class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
+class _NewKYCState extends State<NewKYC> with TickerProviderStateMixin {
   int _currentStep = 0;
   final _formKeys = List.generate(3, (index) => GlobalKey<FormState>());
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final FocusNode _firstNameFocus = FocusNode();
+  final FocusNode _lastNameFocus = FocusNode();
+  final FocusNode _dobFocus = FocusNode();
+  final FocusNode _phoneFocus = FocusNode();
+  String? _firstNameError;
+  String? _lastNameError;
+  String? _dobError;
+  String? _phoneError;
   String _selectedCountry = 'India';
   String _selectedDocumentType = 'Aadhaar';
   File? _frontImage;
   File? _backImage;
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _bankNameController = TextEditingController();
-  final TextEditingController _accountNumberController = TextEditingController();
+  final TextEditingController _accountNumberController =
+      TextEditingController();
   final TextEditingController _ifscController = TextEditingController();
   late AnimationController _animationController;
+  late AnimationController _firstNameShakeController;
+  late AnimationController _lastNameShakeController;
+  late AnimationController _dobShakeController;
+  late AnimationController _phoneShakeController;
+  late Animation<double> _firstNameShakeAnimation;
+  late Animation<double> _lastNameShakeAnimation;
+  late Animation<double> _dobShakeAnimation;
+  late Animation<double> _phoneShakeAnimation;
   String? _selectedBank;
 
   // Static list of Indian banks with sample full IFSC codes (11 characters)
@@ -80,18 +98,62 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    // Initialize animation controller for general animations
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
+    // Initialize shake controllers and animations for each field
+    _firstNameShakeController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _lastNameShakeController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _dobShakeController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _phoneShakeController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _firstNameShakeAnimation = Tween<double>(begin: 0, end: 10)
+        .chain(CurveTween(curve: Curves.elasticIn))
+        .animate(_firstNameShakeController);
+    _lastNameShakeAnimation = Tween<double>(begin: 0, end: 10)
+        .chain(CurveTween(curve: Curves.elasticIn))
+        .animate(_lastNameShakeController);
+    _dobShakeAnimation = Tween<double>(
+      begin: 0,
+      end: 10,
+    ).chain(CurveTween(curve: Curves.elasticIn)).animate(_dobShakeController);
+    _phoneShakeAnimation = Tween<double>(
+      begin: 0,
+      end: 10,
+    ).chain(CurveTween(curve: Curves.elasticIn)).animate(_phoneShakeController);
+
+    // Initialize AuthManager
     AuthManager().init().then((_) {
       AuthManager().loadSavedDetails();
     });
+
+    // Add focus listeners for validation
+    _firstNameFocus.addListener(_validateFirstNameOnFocusChange);
+    _lastNameFocus.addListener(_validateLastNameOnFocusChange);
+    _dobFocus.addListener(_validateDobOnFocusChange);
+    _phoneFocus.addListener(_validatePhoneOnFocusChange);
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _firstNameShakeController.dispose();
+    _lastNameShakeController.dispose();
+    _dobShakeController.dispose();
+    _phoneShakeController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
     _dobController.dispose();
@@ -99,7 +161,137 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
     _bankNameController.dispose();
     _accountNumberController.dispose();
     _ifscController.dispose();
+    _firstNameFocus.dispose();
+    _lastNameFocus.dispose();
+    _dobFocus.dispose();
+    _phoneFocus.dispose();
     super.dispose();
+  }
+
+  void _triggerFirstNameShake() {
+    _firstNameShakeController.forward().then(
+      (_) => _firstNameShakeController.reverse(),
+    );
+  }
+
+  void _triggerLastNameShake() {
+    _lastNameShakeController.forward().then(
+      (_) => _lastNameShakeController.reverse(),
+    );
+  }
+
+  void _triggerDobShake() {
+    _dobShakeController.forward().then((_) => _dobShakeController.reverse());
+  }
+
+  void _triggerPhoneShake() {
+    _phoneShakeController.forward().then(
+      (_) => _phoneShakeController.reverse(),
+    );
+  }
+
+  void _validateFirstNameOnFocusChange() {
+    if (!_firstNameFocus.hasFocus) {
+      setState(() {
+        final value = _firstNameController.text.trim();
+        if (value.isEmpty) {
+          _firstNameError = 'Please enter your first name';
+          _triggerFirstNameShake();
+        } else {
+          _firstNameError = null;
+        }
+      });
+    }
+  }
+
+  void _validateLastNameOnFocusChange() {
+    if (!_lastNameFocus.hasFocus) {
+      setState(() {
+        final value = _lastNameController.text.trim();
+        if (value.isEmpty) {
+          _lastNameError = 'Please enter your last name';
+          _triggerLastNameShake();
+        } else {
+          _lastNameError = null;
+        }
+      });
+    }
+  }
+
+  void _validateDobOnFocusChange() {
+    if (!_dobFocus.hasFocus) {
+      setState(() {
+        final dob = _dobController.text.trim();
+        if (dob.isEmpty) {
+          _dobError = 'Please enter your date of birth';
+          _triggerDobShake();
+        } else {
+          try {
+            final selectedDate = DateFormat('dd/MM/yyyy').parseStrict(dob);
+            final now = DateTime.now();
+            final age = now.difference(selectedDate).inDays ~/ 365;
+            if (age < 18) {
+              _dobError = 'You must be at least 18 years old';
+              _triggerDobShake();
+            } else {
+              _dobError = null;
+            }
+          } catch (e) {
+            _dobError = 'Invalid date format';
+            _triggerDobShake();
+          }
+        }
+      });
+    }
+  }
+
+  void _validatePhoneOnFocusChange() {
+    if (!_phoneFocus.hasFocus) {
+      setState(() {
+        final value = _phoneController.text.trim();
+        if (value.isEmpty) {
+          _phoneError = 'Please enter your phone number';
+          _triggerPhoneShake();
+        } else if (!RegExp(r'^\+?[0-9]{10,12}$').hasMatch(value)) {
+          _phoneError = 'Please enter a valid phone number (10-12 digits)';
+          _triggerPhoneShake();
+        } else {
+          _phoneError = null;
+        }
+      });
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().subtract(const Duration(days: 18 * 365)),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.black ?? Colors.black,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.black ?? Colors.black,
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _dobController.text = DateFormat('dd/MM/yyyy').format(picked);
+        _validateDobOnFocusChange();
+      });
+    }
   }
 
   Future<void> _pickImage(bool isFront) async {
@@ -165,7 +357,7 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
       };
 
       final token = await AuthManager().getAuthToken();
-      if(token == null) {
+      if (token == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -215,11 +407,8 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
               'bankDetails': bankDetails,
             },
           },
-          'token': token, // Include token to satisfy AuthManager
+          'token': token,
         };
-
-        // Log for debugging
-        print('Saving login details: ${jsonEncode(loginDetails)}');
 
         try {
           await AuthManager().saveLoginDetails(loginDetails);
@@ -253,7 +442,9 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
           final errorData = jsonDecode(responseData.body);
           errorMessage = errorData['message'] ?? responseData.body;
         } catch (_) {
-          errorMessage = responseData.body.isNotEmpty ? responseData.body : 'Unknown server error';
+          errorMessage = responseData.body.isNotEmpty
+              ? responseData.body
+              : 'Unknown server error';
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -290,8 +481,15 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black87, size: 24 * fontScale),
-          onPressed: () => Navigator.pushReplacement(context, CupertinoPageRoute(builder: (context) => LoginScreen(),)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.black87,
+            size: 24 * fontScale,
+          ),
+          onPressed: () => Navigator.pushReplacement(
+            context,
+            CupertinoPageRoute(builder: (context) => const LoginScreen()),
+          ),
         ),
         title: Text(
           'KYC Verification',
@@ -328,7 +526,10 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
         ),
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            minHeight: screenHeight - kToolbarHeight - MediaQuery.of(context).padding.top,
+            minHeight:
+                screenHeight -
+                kToolbarHeight -
+                MediaQuery.of(context).padding.top,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,8 +558,8 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
                   _currentStep == 0
                       ? 'Personal Information'
                       : _currentStep == 1
-                          ? 'ID Proof'
-                          : 'Bank Details',
+                      ? 'ID Proof'
+                      : 'Bank Details',
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     fontSize: 24 * fontScale,
@@ -379,8 +580,18 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      if (_formKeys[_currentStep].currentState!.validate()) {
-                        if (_currentStep == 1 && (_frontImage == null || _backImage == null)) {
+                      // Re-validate all fields on submit
+                      _validateFirstNameOnFocusChange();
+                      _validateLastNameOnFocusChange();
+                      _validateDobOnFocusChange();
+                      _validatePhoneOnFocusChange();
+                      if (_formKeys[_currentStep].currentState!.validate() &&
+                          _firstNameError == null &&
+                          _lastNameError == null &&
+                          _dobError == null &&
+                          _phoneError == null) {
+                        if (_currentStep == 1 &&
+                            (_frontImage == null || _backImage == null)) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
@@ -469,7 +680,9 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
           height: 48,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isActive ? (AppColors.black ?? Colors.black87) : Colors.grey.shade200,
+            color: isActive
+                ? (AppColors.black ?? Colors.black87)
+                : Colors.grey.shade200,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
@@ -516,7 +729,9 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
         duration: const Duration(milliseconds: 300),
         height: 4,
         decoration: BoxDecoration(
-          color: progress > 0 ? (AppColors.black ?? Colors.black87) : Colors.grey.shade200,
+          color: progress > 0
+              ? (AppColors.black ?? Colors.black87)
+              : Colors.grey.shade200,
           borderRadius: BorderRadius.circular(2),
           boxShadow: [
             BoxShadow(
@@ -537,6 +752,11 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
     TextInputType? keyboardType,
     bool enabled = true,
     Color? fillColor,
+    FocusNode? focusNode,
+    String? errorText,
+    bool readOnly = false,
+    VoidCallback? onTap,
+    Icon? suffixIcon,
   }) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -561,6 +781,9 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
         validator: validator,
         keyboardType: keyboardType,
         enabled: enabled,
+        focusNode: focusNode,
+        readOnly: readOnly,
+        onTap: onTap,
         style: GoogleFonts.poppins(fontSize: 16, color: Colors.black87),
         decoration: InputDecoration(
           border: OutlineInputBorder(
@@ -578,6 +801,7 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
             vertical: 18,
             horizontal: 16,
           ),
+          errorText: errorText,
           errorStyle: GoogleFonts.poppins(color: Colors.redAccent),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
@@ -594,6 +818,7 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
           ),
+          suffixIcon: suffixIcon,
         ),
       ),
     );
@@ -648,7 +873,9 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
           setState(() {
             _selectedBank = newValue;
             _bankNameController.text = newValue ?? '';
-            _ifscController.text = newValue != null ? bankIfscMap[newValue]! : '';
+            _ifscController.text = newValue != null
+                ? bankIfscMap[newValue]!
+                : '';
           });
         },
         validator: (value) {
@@ -671,48 +898,151 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
           key: _formKeys[0],
           child: Column(
             children: [
-              _buildTextField(
-                label: 'First Name',
-                controller: _firstNameController,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter your first name';
-                  }
-                  return null;
+              AnimatedBuilder(
+                animation: _firstNameShakeAnimation,
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(_firstNameShakeAnimation.value, 0),
+                    child: _buildTextField(
+                      label: 'First Name',
+                      controller: _firstNameController,
+                      focusNode: _firstNameFocus,
+                      errorText: _firstNameError,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          setState(() {
+                            _firstNameError = 'Please enter your first name';
+                            _triggerFirstNameShake();
+                          });
+                          return _firstNameError;
+                        }
+                        setState(() {
+                          _firstNameError = null;
+                        });
+                        return null;
+                      },
+                    ),
+                  );
                 },
               ),
               const SizedBox(height: 15),
-              _buildTextField(
-                label: 'Last Name',
-                controller: _lastNameController,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter your last name';
-                  }
-                  return null;
+              AnimatedBuilder(
+                animation: _lastNameShakeAnimation,
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(_lastNameShakeAnimation.value, 0),
+                    child: _buildTextField(
+                      label: 'Last Name',
+                      controller: _lastNameController,
+                      focusNode: _lastNameFocus,
+                      errorText: _lastNameError,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          setState(() {
+                            _lastNameError = 'Please enter your last name';
+                            _triggerLastNameShake();
+                          });
+                          return _lastNameError;
+                        }
+                        setState(() {
+                          _lastNameError = null;
+                        });
+                        return null;
+                      },
+                    ),
+                  );
                 },
               ),
               const SizedBox(height: 15),
-              _buildTextField(
-                label: 'Date of Birth (DD/MM/YYYY)',
-                controller: _dobController,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter your date of birth';
-                  }
-                  return null;
+              AnimatedBuilder(
+                animation: _dobShakeAnimation,
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(_dobShakeAnimation.value, 0),
+                    child: _buildTextField(
+                      label: 'Date of Birth (DD/MM/YYYY)',
+                      controller: _dobController,
+                      focusNode: _dobFocus,
+                      errorText: _dobError,
+                      readOnly: true,
+                      onTap: () => _selectDate(context),
+                      suffixIcon: Icon(
+                        Icons.calendar_today,
+                        color: Colors.grey.shade600,
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          setState(() {
+                            _dobError = 'Please enter your date of birth';
+                            _triggerDobShake();
+                          });
+                          return _dobError;
+                        }
+                        try {
+                          final selectedDate = DateFormat(
+                            'dd/MM/yyyy',
+                          ).parseStrict(value);
+                          final now = DateTime.now();
+                          final age =
+                              now.difference(selectedDate).inDays ~/ 365;
+                          if (age < 18) {
+                            setState(() {
+                              _dobError = 'You must be at least 18 years old';
+                              _triggerDobShake();
+                            });
+                            return _dobError;
+                          }
+                          setState(() {
+                            _dobError = null;
+                          });
+                          return null;
+                        } catch (e) {
+                          setState(() {
+                            _dobError = 'Invalid date format';
+                            _triggerDobShake();
+                          });
+                          return _dobError;
+                        }
+                      },
+                    ),
+                  );
                 },
               ),
               const SizedBox(height: 15),
-              _buildTextField(
-                label: 'Phone Number',
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty || value.length < 10) {
-                    return 'Please enter a valid phone number';
-                  }
-                  return null;
+              AnimatedBuilder(
+                animation: _phoneShakeAnimation,
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(_phoneShakeAnimation.value, 0),
+                    child: _buildTextField(
+                      label: '+91 Phone Number',
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      focusNode: _phoneFocus,
+                      errorText: _phoneError,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          setState(() {
+                            _phoneError = 'Please enter your phone number';
+                            _triggerPhoneShake();
+                          });
+                          return _phoneError;
+                        }
+                        if (!RegExp(r'^\+?[0-9]{10,12}$').hasMatch(value)) {
+                          setState(() {
+                            _phoneError =
+                                'Please enter a valid phone number (10-12 digits)';
+                            _triggerPhoneShake();
+                          });
+                          return _phoneError;
+                        }
+                        setState(() {
+                          _phoneError = null;
+                        });
+                        return null;
+                      },
+                    ),
+                  );
                 },
               ),
             ],
@@ -760,7 +1090,10 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
                       horizontal: 16,
                     ),
                   ),
-                  style: GoogleFonts.poppins(fontSize: 16, color: Colors.black87),
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
                   items: ['India', 'USA', 'UK']
                       .map(
                         (country) => DropdownMenuItem(
@@ -814,7 +1147,10 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
                       horizontal: 16,
                     ),
                   ),
-                  style: GoogleFonts.poppins(fontSize: 16, color: Colors.black87),
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
                   items: ['Aadhaar', 'Passport', 'Driving License']
                       .map(
                         (docType) => DropdownMenuItem(
@@ -840,7 +1176,10 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
                       icon: const Icon(Icons.upload_file, size: 20),
                       label: Text(
                         'Front Image',
-                        style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.black ?? Colors.black87,
@@ -878,7 +1217,10 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
                       icon: const Icon(Icons.upload_file, size: 20),
                       label: Text(
                         'Back Image',
-                        style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.black ?? Colors.black87,
@@ -924,6 +1266,19 @@ class _NewKYCState extends State<NewKYC> with SingleTickerProviderStateMixin {
                   if (value == null || value.trim().isEmpty) {
                     return 'Please enter your account number';
                   }
+
+                  final trimmedValue = value.trim();
+
+                  // Ensure input contains only digits
+                  if (!RegExp(r'^\d+$').hasMatch(trimmedValue)) {
+                    return 'Account number must contain only digits';
+                  }
+
+                  // Indian bank account numbers usually range from 9 to 18 digits
+                  if (trimmedValue.length < 9 || trimmedValue.length > 18) {
+                    return 'Account number must be between 9 and 18 digits';
+                  }
+
                   return null;
                 },
               ),

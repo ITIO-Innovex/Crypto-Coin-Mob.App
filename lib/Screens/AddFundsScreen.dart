@@ -22,13 +22,17 @@ class AddFundsScreen extends StatefulWidget {
   State<AddFundsScreen> createState() => _AddFundsScreenState();
 }
 
-class _AddFundsScreenState extends State<AddFundsScreen> {
+class _AddFundsScreenState extends State<AddFundsScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
   String _paymentMethod = 'stripe';
   double walletBalance = 0.0;
   bool _isProcessing = false;
   late FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin;
+
+  AnimationController? _animationController;
+  Animation<double>? _fadeAnimation;
 
   final Map<String, String> _currencyToFlag = {
     'USD': 'assets/flags/USD.jpg',
@@ -60,6 +64,83 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
     fetchWalletDetails();
     _initializeNotifications();
     _requestNotificationPermissions();
+
+    // Initialize animation controller for pop-up
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController!, curve: Curves.easeInOut),
+    );
+
+    // Show animated pop-up if currency is not INR
+    if (widget.currency.toUpperCase() != 'INR') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showAnimatedPopup();
+      });
+    }
+  }
+
+  void _showAnimatedPopup() {
+    _animationController?.forward();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AnimatedBuilder(
+        animation: _animationController!,
+        builder: (context, child) => FadeTransition(
+          opacity: _fadeAnimation!,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+              CurvedAnimation(
+                parent: _animationController!,
+                curve: Curves.easeOutBack,
+              ),
+            ),
+            child: AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              title: const Text(
+                'Payment Method Restriction',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              content: const Text(
+                'Razorpay only supports adding funds in INR. Please use Stripe for other currencies.',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.black54,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    _animationController?.reverse().then((_) {
+                      Navigator.pop(context);
+                    });
+                  },
+                  child: const Text(
+                    'OK',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.blue,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+              backgroundColor: Colors.white,
+              elevation: 8,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   void _initializeNotifications() async {
@@ -118,11 +199,7 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
       final bool? granted = await _flutterLocalNotificationsPlugin
           .resolvePlatformSpecificImplementation<
               IOSFlutterLocalNotificationsPlugin>()
-          ?.requestPermissions(
-            alert: true,
-            badge: true,
-            sound: true,
-          );
+          ?.requestPermissions(alert: true, badge: true, sound: true);
       print('iOS Notification permission granted: $granted');
       if (granted != true) {
         print('iOS Notification permission not granted');
@@ -201,8 +278,16 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
     final amount = double.tryParse(_amountController.text.trim());
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid amount')),
+        const SnackBar(
+          content: Text('Please enter a valid amount'),
+          backgroundColor: Colors.red,
+        ),
       );
+      return;
+    }
+
+    if (_paymentMethod == 'razorpay' && widget.currency.toUpperCase() != 'INR') {
+      _showAnimatedPopup();
       return;
     }
 
@@ -258,36 +343,63 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
 
         final razorpay = RazorpayService();
         try {
-          await razorpay.makePayment(
+          // Capture paymentId from Razorpay payment response
+          final paymentId = await razorpay.makePayment(
             response['orderId'],
             response['key'],
             amount,
             widget.currency,
           );
-          await fetchWalletDetails();
-          print('Calling showNotification for Razorpay');
-          await _showNotification(amount);
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TransactionSuccessScreen(
-                amount: amount,
-                currency: widget.currency,
-              ),
-            ),
+          print('Received Razorpay paymentId: $paymentId');
+
+          if (paymentId == null || paymentId.isEmpty) {
+            throw Exception('Razorpay payment failed: No payment ID returned');
+          }
+
+          // Confirm the payment using confirmRazorpayPayment
+          final confirmResponse = await apiService.confirmRazorpayPayment(
+            paymentId,
+            response['orderId'],
           );
+
+          print(
+            'Calling Razorpay confirm API with paymentId: $paymentId, orderId: ${response['orderId']}',
+          );
+          print('Confirm API response: $confirmResponse');
+
+          if (confirmResponse['status'] == 200 ||
+              confirmResponse['success'] == true) {
+            await Future.delayed(Duration(seconds: 2));
+            await fetchWalletDetails();
+            print('Calling showNotification for Razorpay');
+            await _showNotification(amount);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TransactionSuccessScreen(
+                  amount: amount,
+                  currency: widget.currency,
+                ),
+              ),
+            );
+          } else {
+            throw Exception(
+              'Payment confirmation failed: ${confirmResponse['message']}',
+            );
+          }
         } finally {
           razorpay.dispose();
         }
       }
     } catch (e) {
       String errorMessage = e.toString().replaceFirst('Exception: ', '');
-      if (errorMessage.contains('Failed to initiate Razorpay payment')) {
+      print('Payment error: $errorMessage');
+      if (errorMessage.contains('Failed to initiate Razorpay payment') ||
+          errorMessage.contains('Payment confirmation failed')) {
         errorMessage = 'Unable to process payment. Please try again later.';
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
-      );
+          SnackBar(content: Text(errorMessage)));
     } finally {
       setState(() => _isProcessing = false);
     }
@@ -340,9 +452,7 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => NotificationsScreen(
-                                // userId: widget.userId,
-                              ),
+                              builder: (context) => NotificationsScreen(),
                             ),
                           );
                         },
@@ -454,8 +564,7 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
                             Expanded(
                               child: TextField(
                                 controller: _amountController,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
+                                keyboardType: const TextInputType.numberWithOptions(
                                   decimal: true,
                                 ),
                                 style: const TextStyle(
@@ -521,8 +630,14 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
                           Icons.keyboard_arrow_down,
                           color: Colors.black54,
                         ),
-                        onChanged: (val) =>
-                            setState(() => _paymentMethod = val!),
+                        onChanged: (val) => setState(() {
+                          _paymentMethod = val!;
+                          // Show animated pop-up if Razorpay is selected with non-INR currency
+                          if (val == 'razorpay' &&
+                              widget.currency.toUpperCase() != 'INR') {
+                            _showAnimatedPopup();
+                          }
+                        }),
                         items: [
                           DropdownMenuItem(
                             value: 'stripe',
@@ -576,8 +691,9 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
                     child: _isProcessing
                         ? const Center(
                             child: CircularProgressIndicator(
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.black87),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.black87,
+                              ),
                             ),
                           )
                         : ElevatedButton(
@@ -601,28 +717,6 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
                           ),
                   ),
                   const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => _showNotification(100.0),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 5,
-                      ),
-                      child: const Text(
-                        'Test Notification',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             );
@@ -636,6 +730,7 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
   void dispose() {
     _amountController.dispose();
     _messageController.dispose();
+    _animationController?.dispose();
     super.dispose();
   }
 }

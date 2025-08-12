@@ -1,9 +1,10 @@
 import 'package:coincraze/BottomBar.dart';
+import 'package:coincraze/Screens/TransferSuccess.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:coincraze/Models/CryptoWallet.dart';
 import 'package:coincraze/Models/Wallet.dart';
-import 'package:coincraze/Services/api_service.dart'; // Adjust import based on your project structure
+import 'package:coincraze/Services/api_service.dart';
 
 class CryptoSellScreen extends StatefulWidget {
   const CryptoSellScreen({Key? key}) : super(key: key);
@@ -20,8 +21,7 @@ class _CryptoSellScreenState extends State<CryptoSellScreen> {
   double amountToSell = 0.0;
   double convertedAmount = 0.0;
   bool isLoading = false;
-  String errorMessage = '';
-  final ApiService apiService = ApiService(); // Your ApiService instance
+  final ApiService apiService = ApiService();
 
   // Mapping for currency codes to full coin names
   final Map<String, String> currencyToFullName = {
@@ -35,7 +35,6 @@ class _CryptoSellScreenState extends State<CryptoSellScreen> {
     'CELESTIA_TEST': 'Celestia',
     'HBAR_TEST': 'Hedera Hashgraph',
     'TRX_TEST': 'TRON',
-    // Add more mappings as needed based on your API requirements
   };
 
   @override
@@ -47,14 +46,22 @@ class _CryptoSellScreenState extends State<CryptoSellScreen> {
   Future<void> fetchData() async {
     setState(() {
       isLoading = true;
-      errorMessage = '';
     });
     try {
       await Future.wait([fetchCryptoWallets(), fetchFiatWallets()]);
+
+      
     } catch (e) {
-      setState(() {
-        errorMessage = e.toString();
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Error fetching data: $e',
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
     } finally {
       setState(() {
         isLoading = false;
@@ -69,11 +76,20 @@ class _CryptoSellScreenState extends State<CryptoSellScreen> {
         cryptoWallets = wallets;
         if (cryptoWallets.isNotEmpty) {
           selectedCrypto = cryptoWallets[0];
-          updateConvertedAmount(); // Update conversion when crypto is selected
+          updateConvertedAmount();
         }
       });
     } catch (e) {
-      throw Exception('Error fetching crypto wallets: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Error fetching crypto wallets: $e',
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 
@@ -84,124 +100,138 @@ class _CryptoSellScreenState extends State<CryptoSellScreen> {
         fiatWallets = wallets;
         if (fiatWallets.isNotEmpty) {
           selectedFiat = fiatWallets[0];
-          updateConvertedAmount(); // Update conversion when fiat is selected
+          updateConvertedAmount();
         }
       });
     } catch (e) {
-      throw Exception('Error fetching fiat wallets: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Error fetching fiat wallets: $e',
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 
   Future<void> updateConvertedAmount() async {
     if (selectedCrypto != null && selectedFiat != null && amountToSell > 0) {
       try {
-        // Map the currency code to the full coin name
         final cryptoFullName =
             currencyToFullName[selectedCrypto!.currency] ??
             selectedCrypto!.currency;
         final rates = await apiService.fetchCryptoExchangeRates(
-          cryptoFullName, // Pass full coin name (e.g., "Ethereum")
+          cryptoFullName,
           selectedFiat!.currency,
           amountToSell,
         );
-        // Use the rate (1 crypto = rate * fiat) to calculate fiat amount
         final rate = rates[selectedFiat!.currency.toLowerCase()] ?? 1.0;
         setState(() {
-          convertedAmount = amountToSell * rate; // Sell crypto to get fiat
-          errorMessage = ''; // Clear any previous error
+          convertedAmount = amountToSell * rate;
         });
       } catch (e) {
         setState(() {
           convertedAmount = 0.0;
-          errorMessage = 'Error fetching exchange rate: $e';
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error fetching exchange rate: $e',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     } else {
       setState(() {
         convertedAmount = 0.0;
-        errorMessage = '';
       });
     }
   }
 
-  Future<void> sellCrypto() async {
-    if (selectedCrypto == null || selectedFiat == null || amountToSell <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select valid crypto, fiat, and amount'),
+Future<void> sellCrypto() async {
+  if (selectedCrypto == null || selectedFiat == null || amountToSell <= 0) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please select valid crypto, fiat, and amount'),
+      ),
+    );
+    return;
+  }
+
+  if (amountToSell > selectedCrypto!.balance) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'You don\'t have sufficient balance in your crypto wallet account',
         ),
-      );
-      return;
+      ),
+    );
+    return;
+  }
+
+  setState(() {
+    isLoading = true;
+  });
+
+  try {
+    final cryptoFullName =
+        currencyToFullName[selectedCrypto!.currency] ?? selectedCrypto!.currency;
+
+    // Ensure convertedAmount is updated before the API call
+    await updateConvertedAmount();
+    if (convertedAmount <= 0) {
+      throw Exception('Invalid converted amount');
     }
 
-    // Validate if amountToSell is within the crypto wallet balance
-    if (amountToSell > selectedCrypto!.balance) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'You don\'t have sufficient balance in your crypto wallet account',
-          ),
-        ),
-      );
-      return;
-    }
+    // Store the values to pass to TransactionSuccessScreen
+    final double finalConvertedAmount = convertedAmount;
+    final String finalCurrency = selectedFiat!.currency;
 
+    await apiService.sellCryptoToFiat(
+      cryptoCurrency: cryptoFullName,
+      fiatCurrency: selectedFiat!.currency,
+      cryptoAmount: amountToSell,
+      fiatAmount: convertedAmount,
+      cryptoWalletId: selectedCrypto!.id ?? '',
+      fiatWalletId: selectedFiat!.id.toString(),
+    );
+
+    await Future.wait([fetchCryptoWallets(), fetchFiatWallets()]);
+
+    // Navigate to TransactionSuccessScreen with preserved values
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TransactionSuccessScreen(
+          amount: finalConvertedAmount,
+          currency: finalCurrency,
+        ),
+      ),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Error selling crypto: $e',
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
+  } finally {
     setState(() {
-      isLoading = true;
+      isLoading = false;
+      amountToSell = 0.0; // Safe to reset after navigation
+      convertedAmount = 0.0; // Safe to reset after navigation
     });
-
-    try {
-      // Call API to sell crypto and update fiat wallet
-      final cryptoFullName =
-          currencyToFullName[selectedCrypto!.currency] ??
-          selectedCrypto!.currency;
-
-      print('crypto Full Name:-  $cryptoFullName');
-      print(selectedFiat!.currency);
-      print(amountToSell);
-      print(convertedAmount);
-      print(selectedCrypto!.id ?? '');
-      print(selectedFiat!.id.toString());
-
-      await apiService.sellCryptoToFiat(
-        cryptoCurrency: cryptoFullName,
-        fiatCurrency: selectedFiat!.currency,
-        cryptoAmount: amountToSell,
-        fiatAmount: convertedAmount,
-        cryptoWalletId: selectedCrypto!.id ?? '',
-        fiatWalletId: selectedFiat!.id.toString(), // Use _id for fiat wallet
-      );
-
-      // Refresh wallet balances after successful sell
-      await Future.wait([fetchCryptoWallets(), fetchFiatWallets()]);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Crypto sold successfully!',
-            style: TextStyle(color: Colors.white),
-          ),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Error selling crypto: $e',
-            style: TextStyle(color: Colors.white),
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      setState(() {
-        isLoading = false;
-        amountToSell = 0.0;
-        convertedAmount = 0.0;
-      });
-    }
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -224,33 +254,6 @@ class _CryptoSellScreenState extends State<CryptoSellScreen> {
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.amber))
-          : errorMessage.isNotEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    errorMessage,
-                    style: const TextStyle(color: Colors.red, fontSize: 16),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: fetchData,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    child: const Text(
-                      'Retry',
-                      style: TextStyle(color: Colors.black),
-                    ),
-                  ),
-                ],
-              ),
-            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(

@@ -11,13 +11,15 @@ import 'package:coincraze/Screens/SellCryptoScreen.dart';
 import 'package:coincraze/Screens/SettingsPage.dart';
 import 'package:coincraze/Screens/Transactions.dart';
 import 'package:coincraze/WalletList.dart';
-import 'package:coincraze/chartScreen.dart';
 import 'package:coincraze/deposit.dart';
 import 'package:coincraze/newKyc.dart';
 import 'package:coincraze/walletScreen.dart';
+import 'package:coincraze/Models/CryptoWallet.dart';
+import 'package:coincraze/Services/api_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_iconly/flutter_iconly.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -26,6 +28,7 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:syncfusion_flutter_charts/sparkcharts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:shimmer/shimmer.dart'; // Added for skeleton loading
 
 class Homescreen extends StatefulWidget {
   const Homescreen({super.key});
@@ -46,6 +49,10 @@ class _HomescreenState extends State<Homescreen> {
   bool isLoading = true;
   final ImagePicker _picker = ImagePicker();
   Timer? _priceUpdateTimer; // Timer for periodic updates
+  
+  // Bitcoin wallet address
+  String? bitcoinWalletAddress;
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
@@ -54,10 +61,11 @@ class _HomescreenState extends State<Homescreen> {
     _fetchCryptoData();
     _checkHiveData();
     _checkKycStatus();
+    _fetchBitcoinWalletAddress(); // Fetch Bitcoin wallet address
     // Set up timer to fetch crypto data every 30 seconds
-    _priceUpdateTimer = Timer.periodic(Duration(seconds: 30), (timer) {
-      _fetchCryptoData();
-    });
+    // _priceUpdateTimer = Timer.periodic(Duration(seconds: 30), (timer) {
+    //   _fetchCryptoData();
+    // });
   }
 
   @override
@@ -167,6 +175,48 @@ class _HomescreenState extends State<Homescreen> {
     await AuthManager().loadSavedDetails(); // Load AuthManager data
   }
 
+  // Fetch Bitcoin wallet address
+  Future<void> _fetchBitcoinWalletAddress() async {
+    try {
+      final wallets = await _apiService.getCryptoWalletBalances();
+      print('Fetched Wallets for Bitcoin address: $wallets');
+      
+      // Find Bitcoin wallet (check for different possible names)
+      final bitcoinWallet = wallets.firstWhere(
+        (wallet) => 
+          wallet.currency.toUpperCase() == 'BTC_TEST' ||
+          wallet.currency.toLowerCase() == 'bitcoin' ||
+          wallet.currency.toLowerCase() == 'btc' ||
+          wallet.currency.toLowerCase().contains('bitcoin') ||
+          wallet.currency.toLowerCase() == 'btc_test' ||
+          wallet.currency.toLowerCase().contains('btc'),
+        orElse: () => CryptoWallet(currency: ''),
+      );
+      
+      if (bitcoinWallet.currency.isNotEmpty && bitcoinWallet.address != null) {
+        print('Found Bitcoin wallet: ${bitcoinWallet.currency}, Address: ${bitcoinWallet.address}');
+        setState(() {
+          bitcoinWalletAddress = bitcoinWallet.address;
+        });
+        print('Bitcoin wallet address set: $bitcoinWalletAddress');
+      } else {
+        print('Bitcoin wallet not found. Available wallets:');
+        for (var wallet in wallets) {
+          print('- Currency: ${wallet.currency}, Address: ${wallet.address}');
+        }
+        setState(() {
+          bitcoinWalletAddress = 'Bitcoin wallet not found';
+        });
+      }
+    } catch (e) {
+      print('Error fetching Bitcoin wallet address: $e');
+      // Keep the default hardcoded address as fallback
+      setState(() {
+        bitcoinWalletAddress = 'tb1qtu8n3jz7q5zmdrelqc28lmvglf9fdkluhelw7e';
+      });
+    }
+  }
+
   Future<void> _fetchCryptoData() async {
     setState(() {
       isLoading = true;
@@ -242,6 +292,7 @@ class _HomescreenState extends State<Homescreen> {
 
   Future<void> _refreshData() async {
     await _fetchCryptoData();
+    await _fetchBitcoinWalletAddress(); // Also refresh Bitcoin wallet address
   }
 
   Future<void> _pickAndUploadImage() async {
@@ -399,6 +450,220 @@ class _HomescreenState extends State<Homescreen> {
     }
   }
 
+  // Skeleton widget for header (menu icon, KYC, notifications, profile avatar)
+  Widget _buildSkeletonHeader(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Shimmer.fromColors(
+          baseColor: Colors.grey[800]!,
+          highlightColor: Colors.grey[600]!,
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.08,
+            height: MediaQuery.of(context).size.width * 0.08,
+            color: Colors.grey[800],
+          ),
+        ),
+        Row(
+          children: [
+            Shimmer.fromColors(
+              baseColor: Colors.grey[800]!,
+              highlightColor: Colors.grey[600]!,
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.06,
+                height: MediaQuery.of(context).size.width * 0.06,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ),
+            SizedBox(width: MediaQuery.of(context).size.width * 0.05),
+            Shimmer.fromColors(
+              baseColor: Colors.grey[800]!,
+              highlightColor: Colors.grey[600]!,
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.06,
+                height: MediaQuery.of(context).size.width * 0.06,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ),
+            SizedBox(width: MediaQuery.of(context).size.width * 0.05),
+            Shimmer.fromColors(
+              baseColor: Colors.grey[800]!,
+              highlightColor: Colors.grey[600]!,
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.06,
+                height: MediaQuery.of(context).size.width * 0.06,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Skeleton widget for wallet balance section
+  Widget _buildSkeletonWalletBalance(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Shimmer.fromColors(
+          baseColor: Colors.grey[800]!,
+          highlightColor: Colors.grey[600]!,
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.4,
+            height: MediaQuery.of(context).size.width * 0.05,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: MediaQuery.of(context).size.height * 0.015),
+        Shimmer.fromColors(
+          baseColor: Colors.grey[800]!,
+          highlightColor: Colors.grey[600]!,
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.6,
+            height: MediaQuery.of(context).size.width * 0.09,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+        Shimmer.fromColors(
+          baseColor: Colors.grey[800]!,
+          highlightColor: Colors.grey[600]!,
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.7,
+            height: MediaQuery.of(context).size.height * 0.05,
+            decoration: BoxDecoration(
+              color: Colors.grey[800],
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Skeleton widget for buttons (FIAT Wallet, Crypto Wallet, Sell Crypto)
+  Widget _buildSkeletonButtons(BuildContext context) {
+    return Wrap(
+      spacing: MediaQuery.of(context).size.width * 0.02,
+      runSpacing: MediaQuery.of(context).size.height * 0.02,
+      alignment: WrapAlignment.spaceEvenly,
+      children: List.generate(
+        3,
+        (index) => Column(
+          children: [
+            Shimmer.fromColors(
+              baseColor: Colors.grey[800]!,
+              highlightColor: Colors.grey[600]!,
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.12,
+                height: MediaQuery.of(context).size.width * 0.12,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+            Shimmer.fromColors(
+              baseColor: Colors.grey[800]!,
+              highlightColor: Colors.grey[600]!,
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.2,
+                height: MediaQuery.of(context).size.width * 0.035,
+                color: Colors.grey[800],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Skeleton widget for crypto prices list
+  Widget _buildSkeletonCryptoList(BuildContext context) {
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.15,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: 5, // Show 5 placeholder items
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: EdgeInsets.only(
+              right: MediaQuery.of(context).size.width * 0.03,
+            ),
+            child: Shimmer.fromColors(
+              baseColor: Colors.grey[800]!,
+              highlightColor: Colors.grey[600]!,
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.55,
+                decoration: BoxDecoration(
+                  color: Colors.grey[800],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: MediaQuery.of(context).size.width * 0.03,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: MediaQuery.of(context).size.width * 0.1,
+                            height: MediaQuery.of(context).size.width * 0.1,
+                            color: Colors.grey[800],
+                          ),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.01,
+                          ),
+                          Container(
+                            width: MediaQuery.of(context).size.width * 0.15,
+                            height: MediaQuery.of(context).size.width * 0.035,
+                            color: Colors.grey[800],
+                          ),
+                        ],
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: MediaQuery.of(context).size.width * 0.15,
+                            height: MediaQuery.of(context).size.width * 0.035,
+                            color: Colors.grey[800],
+                          ),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.01,
+                          ),
+                          Container(
+                            width: MediaQuery.of(context).size.width * 0.1,
+                            height: MediaQuery.of(context).size.width * 0.03,
+                            color: Colors.grey[800],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final FirstName = AuthManager().firstName ?? 'User';
@@ -406,7 +671,8 @@ class _HomescreenState extends State<Homescreen> {
     final greeting = getGreeting();
     final profilePicture = AuthManager().profilePicture;
     final isKycCompleted = AuthManager().kycCompleted ?? false;
-
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       key: _scaffoldKey,
       drawer: Drawer(
@@ -446,7 +712,7 @@ class _HomescreenState extends State<Homescreen> {
                               Navigator.push(
                                 context,
                                 CupertinoPageRoute(
-                                  builder: (context) => ProfileScreen(),
+                                  builder: (context) => CryptoSettingsPage(),
                                 ),
                               );
                             },
@@ -521,26 +787,26 @@ class _HomescreenState extends State<Homescreen> {
                   Navigator.pop(context);
                 },
               ),
-              ListTile(
-                leading: Icon(
-                  Icons.account_balance_wallet,
-                  color: Colors.white,
-                  size: MediaQuery.of(context).size.width * 0.06,
-                ),
-                title: Text(
-                  'Wallet',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: MediaQuery.of(context).size.width * 0.04,
-                  ),
-                ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    CupertinoPageRoute(builder: (context) => WalletScreen()),
-                  );
-                },
-              ),
+              // ListTile(
+              //   leading: Icon(
+              //     Icons.account_balance_wallet,
+              //     color: Colors.white,
+              //     size: MediaQuery.of(context).size.width * 0.06,
+              //   ),
+              //   title: Text(
+              //     'Wallet',
+              //     style: GoogleFonts.poppins(
+              //       color: Colors.white,
+              //       fontSize: MediaQuery.of(context).size.width * 0.04,
+              //     ),
+              //   ),
+              //   onTap: () {
+              //     Navigator.push(
+              //       context,
+              //       CupertinoPageRoute(builder: (context) => WalletScreen()),
+              //     );
+              //   },
+              // ),
               ListTile(
                 leading: Icon(
                   Icons.history,
@@ -555,7 +821,12 @@ class _HomescreenState extends State<Homescreen> {
                   ),
                 ),
                 onTap: () {
-                  Navigator.push(context, CupertinoPageRoute(builder: (context) => DetailsTransactionScreen(),));
+                  Navigator.push(
+                    context,
+                    CupertinoPageRoute(
+                      builder: (context) => DetailsTransactionScreen(),
+                    ),
+                  );
                 },
               ),
               ListTile(
@@ -572,7 +843,12 @@ class _HomescreenState extends State<Homescreen> {
                   ),
                 ),
                 onTap: () {
-                  Navigator.push(context, CupertinoPageRoute(builder: (context) => CryptoSettingsPage(),));
+                  Navigator.push(
+                    context,
+                    CupertinoPageRoute(
+                      builder: (context) => CryptoSettingsPage(),
+                    ),
+                  );
                 },
               ),
               ListTile(
@@ -626,214 +902,90 @@ class _HomescreenState extends State<Homescreen> {
                   horizontal: MediaQuery.of(context).size.width * 0.04,
                   vertical: MediaQuery.of(context).size.height * 0.01,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            _scaffoldKey.currentState?.openDrawer();
-                          },
-                          child: Icon(
-                            Icons.menu,
-                            color: Colors.white,
-                            size: MediaQuery.of(context).size.width * 0.08,
+                child: isLoading
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSkeletonHeader(context),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.03,
                           ),
-                        ),
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                if (isKycCompleted) {
-                                  _showKycStatus();
-                                } else {
-                                  Navigator.push(
-                                    context,
-                                    CupertinoPageRoute(
-                                      builder: (context) => const NewKYC(),
-                                    ),
-                                  );
-                                }
-                              },
-                              child: Icon(
-                                isKycCompleted
-                                    ? Icons.verified_user
-                                    : Icons.error_outline,
-                                color: isKycCompleted
-                                    ? Colors.green
-                                    : Colors.red,
-                                size: MediaQuery.of(context).size.width * 0.06,
-                              ),
+                          Padding(
+                            padding: EdgeInsets.only(
+                              right: MediaQuery.of(context).size.width * 0.25,
                             ),
-                            SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.05,
+                            child: Divider(
+                              thickness: 1,
+                              color: Color.fromARGB(255, 121, 119, 119),
                             ),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(context, CupertinoPageRoute(builder: (context) => NotificationsScreen(),));
-                              },
-                              child: Icon(
-                                Icons.notifications,
-                                color: Colors.white,
-                                size: MediaQuery.of(context).size.width * 0.06,
-                              ),
-                            ),
-                            SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.05,
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  CupertinoPageRoute(
-                                    builder: (context) => ProfileScreen(),
-                                  ),
-                                );
-                              },
-                              child: CircleAvatar(
-                                radius:
-                                    MediaQuery.of(context).size.width * 0.06,
-                                backgroundImage: profilePicture != null
-                                    ? CachedNetworkImageProvider(
-                                        '$ProductionBaseUrl/$profilePicture',
-                                      )
-                                    : const AssetImage(
-                                            'assets/images/ProfileImage.jpg',
-                                          )
-                                          as ImageProvider,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-                    // Wallet Balance with Greeting
-                    Padding(
-                      padding: EdgeInsets.only(
-                        right: MediaQuery.of(context).size.width * 0.25,
-                      ),
-                      child: Divider(
-                        thickness: 1,
-                        color: Color.fromARGB(255, 121, 119, 119),
-                      ),
-                    ),
-                    Text(
-                      '$greeting, $FirstName!',
-                      style: GoogleFonts.poppins(
-                        fontSize: MediaQuery.of(context).size.width * 0.05,
-                        fontWeight: FontWeight.bold,
-                        color: const Color.fromARGB(255, 234, 232, 232),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(
-                        right: MediaQuery.of(context).size.width * 0.25,
-                      ),
-                      child: Divider(
-                        thickness: 1,
-                        color: Color.fromARGB(255, 121, 119, 119),
-                      ),
-                    ),
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.015,
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Current BTC Value',
-                          style: GoogleFonts.poppins(
-                            fontSize: MediaQuery.of(context).size.width * 0.04,
-                            fontWeight: FontWeight.bold,
-                            color: const Color.fromARGB(255, 169, 166, 166),
                           ),
-                        ),
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.01,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                isLoading
-                                    ? 'Loading...'
-                                    : '\$${btcPrice.toStringAsFixed(2)}',
-                                style: GoogleFonts.poppins(
-                                  fontSize:
-                                      MediaQuery.of(context).size.width * 0.09,
-                                  fontWeight: FontWeight.bold,
+                          _buildSkeletonWalletBalance(context),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.04,
+                          ),
+                          _buildSkeletonButtons(context),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.04,
+                          ),
+                          _buildSkeletonCryptoList(context),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.03,
+                          ),
+                          // Placeholder for TransactionsScreen
+                          Shimmer.fromColors(
+                            baseColor: Colors.grey[800]!,
+                            highlightColor: Colors.grey[600]!,
+                            child: Container(
+                              height: MediaQuery.of(context).size.height * 0.2,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  _scaffoldKey.currentState?.openDrawer();
+                                },
+                                child: Icon(
+                                  Icons.menu,
                                   color: Colors.white,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (isLoading) ...[
-                              SizedBox(
-                                width: MediaQuery.of(context).size.width * 0.03,
-                              ),
-                              SizedBox(
-                                height:
-                                    MediaQuery.of(context).size.width * 0.05,
-                                width: MediaQuery.of(context).size.width * 0.05,
-                                child: const CircularProgressIndicator(
-                                  strokeWidth: 2,
+                                  size:
+                                      MediaQuery.of(context).size.width * 0.08,
                                 ),
                               ),
-                            ],
-                          ],
-                        ),
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.01,
-                        ),
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            return Container(
-                              width: constraints.maxWidth * 0.7,
-                              padding: EdgeInsets.symmetric(
-                                horizontal:
-                                    MediaQuery.of(context).size.width * 0.04,
-                                vertical:
-                                    MediaQuery.of(context).size.height * 0.015,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color.fromARGB(
-                                  255,
-                                  255,
-                                  255,
-                                  251,
-                                ).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(10),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.white.withOpacity(0.2),
-                                    blurRadius: 0.0,
-                                    offset: const Offset(0, 0),
-                                  ),
-                                ],
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.2),
-                                  width: 1.0,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                              Row(
                                 children: [
-                                  Flexible(
-                                    child: Text(
-                                      'envi2ze0...@Ton.network',
-                                      style: GoogleFonts.poppins(
-                                        fontSize:
-                                            MediaQuery.of(context).size.width *
-                                            0.035,
-                                        color: Colors.white,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
+                                  GestureDetector(
+                                    onTap: () {
+                                      if (isKycCompleted) {
+                                        _showKycStatus();
+                                      } else {
+                                        Navigator.push(
+                                          context,
+                                          CupertinoPageRoute(
+                                            builder: (context) =>
+                                                const NewKYC(),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: Icon(
+                                      isKycCompleted
+                                          ? Icons.verified_user
+                                          : Icons.error_outline,
+                                      color: isKycCompleted
+                                          ? Colors.green
+                                          : Colors.red,
+                                      size:
+                                          MediaQuery.of(context).size.width *
+                                          0.06,
                                     ),
                                   ),
                                   SizedBox(
@@ -843,215 +995,483 @@ class _HomescreenState extends State<Homescreen> {
                                   ),
                                   GestureDetector(
                                     onTap: () {
-                                      Clipboard.setData(
-                                        const ClipboardData(
-                                          text: 'envi2ze0...@Ton.network',
-                                        ),
-                                      );
-                                      ScaffoldMessenger.of(
+                                      Navigator.push(
                                         context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Address copied to clipboard',
-                                            style: TextStyle(
-                                              fontSize:
-                                                  MediaQuery.of(
-                                                    context,
-                                                  ).size.width *
-                                                  0.04,
-                                            ),
-                                          ),
+                                        CupertinoPageRoute(
+                                          builder: (context) =>
+                                              NotificationsScreen(),
                                         ),
                                       );
                                     },
                                     child: Icon(
-                                      Icons.content_copy,
+                                      Icons.notifications,
+                                      color: Colors.white,
                                       size:
                                           MediaQuery.of(context).size.width *
-                                          0.04,
-                                      color: Colors.white70,
+                                          0.06,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width:
+                                        MediaQuery.of(context).size.width *
+                                        0.05,
+                                  ),
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        CupertinoPageRoute(
+                                          builder: (context) =>
+                                              CryptoSettingsPage(),
+                                        ),
+                                      );
+                                    },
+                                    child: CircleAvatar(
+                                      radius:
+                                          MediaQuery.of(context).size.width *
+                                          0.06,
+                                      backgroundImage: profilePicture != null
+                                          ? CachedNetworkImageProvider(
+                                              '$ProductionBaseUrl/$profilePicture',
+                                            )
+                                          : const AssetImage(
+                                                  'assets/images/ProfileImage.jpg',
+                                                )
+                                                as ImageProvider,
                                     ),
                                   ),
                                 ],
                               ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.04),
-                    // Deposit and Withdraw Buttons
-                    Wrap(
-                      spacing: MediaQuery.of(context).size.width * 0.02,
-                      runSpacing: MediaQuery.of(context).size.height * 0.02,
-                      alignment: WrapAlignment.spaceEvenly,
-                      children: [
-                        Column(
-                          children: [
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  CupertinoPageRoute(
-                                    builder: (context) => FiatWalletScreen(),
+                            ],
+                          ),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.03,
+                          ),
+                          // Wallet Balance with Greeting
+                          Padding(
+                            padding: EdgeInsets.only(
+                              right: MediaQuery.of(context).size.width * 0.25,
+                            ),
+                            child: Divider(
+                              thickness: 1,
+                              color: Color.fromARGB(255, 121, 119, 119),
+                            ),
+                          ),
+                          Text(
+                            '$greeting, $FirstName!',
+                            style: GoogleFonts.poppins(
+                              fontSize:
+                                  MediaQuery.of(context).size.width * 0.05,
+                              fontWeight: FontWeight.bold,
+                              color: const Color.fromARGB(255, 234, 232, 232),
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(
+                              right: MediaQuery.of(context).size.width * 0.25,
+                            ),
+                            child: Divider(
+                              thickness: 1,
+                              color: Color.fromARGB(255, 121, 119, 119),
+                            ),
+                          ),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.015,
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Current BTC Value',
+                                style: GoogleFonts.poppins(
+                                  fontSize:
+                                      MediaQuery.of(context).size.width * 0.04,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color.fromARGB(
+                                    255,
+                                    169,
+                                    166,
+                                    166,
                                   ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                side: const BorderSide(
-                                  color: Colors.white,
-                                  width: 1,
-                                ),
-                                shape: const CircleBorder(),
-                                padding: EdgeInsets.all(
-                                  MediaQuery.of(context).size.width * 0.04,
                                 ),
                               ),
-                              child: Icon(
-                                Icons.currency_rupee_sharp,
-                                color: Colors.white,
-                                size: MediaQuery.of(context).size.width * 0.06,
+                              SizedBox(
+                                height:
+                                    MediaQuery.of(context).size.height * 0.01,
                               ),
-                            ),
-                            SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.01,
-                            ),
-                            Text(
-                              'FIAT WALLET',
-                              style: GoogleFonts.poppins(
-                                color: Colors.white,
-                                fontSize:
-                                    MediaQuery.of(context).size.width * 0.035,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          children: [
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  CupertinoPageRoute(
-                                    builder: (context) => CryptoWalletScreen(),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      '\$${btcPrice.toStringAsFixed(2)}',
+                                      style: GoogleFonts.poppins(
+                                        fontSize:
+                                            MediaQuery.of(context).size.width *
+                                            0.09,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                side: const BorderSide(
-                                  color: Colors.white,
-                                  width: 1,
-                                ),
-                                shape: const CircleBorder(),
-                                padding: EdgeInsets.all(
-                                  MediaQuery.of(context).size.width * 0.04,
-                                ),
+                                ],
                               ),
-                              child: Icon(
-                                Icons.currency_bitcoin_rounded,
-                                color: Colors.white,
-                                size: MediaQuery.of(context).size.width * 0.06,
+                              SizedBox(
+                                height:
+                                    MediaQuery.of(context).size.height * 0.01,
                               ),
-                            ),
-                            SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.01,
-                            ),
-                            Text(
-                              'Crypto Wallet',
-                              style: GoogleFonts.poppins(
-                                color: Colors.white,
-                                fontSize:
-                                    MediaQuery.of(context).size.width * 0.035,
+                              LayoutBuilder(
+                                builder: (context, constraints) {
+                                  return Container(
+                                    width: constraints.maxWidth * 0.7,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal:
+                                          MediaQuery.of(context).size.width *
+                                          0.04,
+                                      vertical:
+                                          MediaQuery.of(context).size.height *
+                                          0.015,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color.fromARGB(
+                                        255,
+                                        255,
+                                        255,
+                                        251,
+                                      ).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(10),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.white.withOpacity(0.2),
+                                          blurRadius: 0.0,
+                                          offset: const Offset(0, 0),
+                                        ),
+                                      ],
+                                      border: Border.all(
+                                        color: Colors.white.withOpacity(0.2),
+                                        width: 1.0,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            bitcoinWalletAddress ?? 'tb1qpj3lnlytpn6s0jrvxy6d8the5nfwkncqzqragp',
+                                            style: GoogleFonts.poppins(
+                                              fontSize:
+                                                  MediaQuery.of(
+                                                    context,
+                                                  ).size.width *
+                                                  0.035,
+                                              color: Colors.white,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          width:
+                                              MediaQuery.of(
+                                                context,
+                                              ).size.width *
+                                              0.05,
+                                        ),
+                                        GestureDetector(
+                                          onTap: () {
+                                            if (bitcoinWalletAddress != null) {
+                                              Clipboard.setData(
+                                                ClipboardData(
+                                                  text: bitcoinWalletAddress!,
+                                                ),
+                                              );
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    'Bitcoin address copied to clipboard',
+                                                    style: TextStyle(
+                                                      fontSize:
+                                                          MediaQuery.of(
+                                                            context,
+                                                          ).size.width *
+                                                          0.04,
+                                                    ),
+                                                  ),
+                                                  backgroundColor: Colors.green,
+                                                ),
+                                              );
+                                            } else {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    'Bitcoin address not available yet',
+                                                    style: TextStyle(
+                                                      fontSize:
+                                                          MediaQuery.of(
+                                                            context,
+                                                          ).size.width *
+                                                          0.04,
+                                                    ),
+                                                  ),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          child: Icon(
+                                            Icons.content_copy,
+                                            size:
+                                                MediaQuery.of(
+                                                  context,
+                                                ).size.width *
+                                                0.04,
+                                            color: Colors.white70,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          children: [
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  CupertinoPageRoute(
-                                    builder: (context) => CryptoSellScreen(),
+                            ],
+                          ),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.04,
+                          ),
+                          // Deposit and Withdraw Buttons
+                          Wrap(
+                            spacing: MediaQuery.of(context).size.width * 0.03,
+                            runSpacing:
+                                MediaQuery.of(context).size.height * 0.025,
+                            alignment: WrapAlignment.spaceEvenly,
+                            children: [
+                              Column(
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        CupertinoPageRoute(
+                                          builder: (context) =>
+                                              FiatWalletScreen(),
+                                        ),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.transparent,
+                                      foregroundColor: Colors.white,
+                                      side: BorderSide(
+                                        color: Colors.white.withOpacity(0.8),
+                                        width: 1.5,
+                                      ),
+                                      shape: const CircleBorder(),
+                                      padding: EdgeInsets.all(
+                                        MediaQuery.of(context).size.width *
+                                            0.024,
+                                      ),
+                                      elevation: 5,
+                                      shadowColor: Colors.black.withOpacity(
+                                        0.3,
+                                      ),
+                                    ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.blue.shade300,
+                                            Colors.blue.shade600,
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                      ),
+                                      padding: EdgeInsets.all(
+                                        MediaQuery.of(context).size.width *
+                                            0.02,
+                                      ),
+                                      child: Icon(
+                                        IconlyLight.wallet,
+                                        color: Colors.white,
+                                        size:
+                                            MediaQuery.of(context).size.width *
+                                            0.07,
+                                      ),
+                                    ),
                                   ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                side: const BorderSide(
-                                  color: Colors.white,
-                                  width: 1,
-                                ),
-                                shape: const CircleBorder(),
-                                padding: EdgeInsets.all(
-                                  MediaQuery.of(context).size.width * 0.04,
-                                ),
+                                  SizedBox(
+                                    height:
+                                        MediaQuery.of(context).size.height *
+                                        0.015,
+                                  ),
+                                  Text(
+                                    'Fiat Wallet',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white,
+                                      fontSize:
+                                          MediaQuery.of(context).size.width *
+                                          0.034,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              child: Icon(
-                                Icons.currency_bitcoin_rounded,
-                                color: Colors.white,
-                                size: MediaQuery.of(context).size.width * 0.06,
+                               SizedBox(width: 7),
+                              Column(
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        CupertinoPageRoute(
+                                          builder: (context) =>
+                                              CryptoWalletScreen(),
+                                        ),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.transparent,
+                                      foregroundColor: Colors.white,
+                                      side: BorderSide(
+                                        color: Colors.white.withOpacity(0.8),
+                                        width: 1.5,
+                                      ),
+                                      shape: const CircleBorder(),
+                                      padding: EdgeInsets.all(
+                                        MediaQuery.of(context).size.width *
+                                            0.024,
+                                      ),
+                                      elevation: 5,
+                                      shadowColor: Colors.black.withOpacity(
+                                        0.3,
+                                      ),
+                                    ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.green.shade300,
+                                            Colors.green.shade600,
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                      ),
+                                      padding: EdgeInsets.all(
+                                        MediaQuery.of(context).size.width *
+                                            0.02,
+                                      ),
+                                      child: Icon(
+                                        IconlyLight.chart,
+                                        color: Colors.white,
+                                        size:
+                                            MediaQuery.of(context).size.width *
+                                            0.07,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height:
+                                        MediaQuery.of(context).size.height *
+                                        0.015,
+                                  ),
+                                  Text(
+                                    'Crypto Wallet',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white,
+                                      fontSize:
+                                          MediaQuery.of(context).size.width *
+                                          0.034,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                            SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.01,
-                            ),
-                            Text(
-                              'Sell Crypto',
-                              style: GoogleFonts.poppins(
-                                color: Colors.white,
-                                fontSize:
-                                    MediaQuery.of(context).size.width * 0.035,
+                              SizedBox(width: 7),
+                              Column(
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        CupertinoPageRoute(
+                                          builder: (context) =>
+                                              CryptoSellScreen(),
+                                        ),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.transparent,
+                                      foregroundColor: Colors.white,
+                                      side: BorderSide(
+                                        color: Colors.white.withOpacity(0.8),
+                                        width: 1.5,
+                                      ),
+                                      shape: const CircleBorder(),
+                                      padding: EdgeInsets.all(
+                                        MediaQuery.of(context).size.width *
+                                            0.024,
+                                      ),
+                                      elevation: 5,
+                                      shadowColor: Colors.black.withOpacity(
+                                        0.3,
+                                      ),
+                                    ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.orange.shade300,
+                                            Colors.orange.shade600,
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                      ),
+                                      padding: EdgeInsets.all(
+                                        MediaQuery.of(context).size.width *
+                                            0.02,
+                                      ),
+                                      child: Icon(
+                                        IconlyLight.swap,
+                                        color: Colors.white,
+                                        size:
+                                            MediaQuery.of(context).size.width *
+                                            0.07,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height:
+                                        MediaQuery.of(context).size.height *
+                                        0.015,
+                                  ),
+                                  Text(
+                                    'Sell Crypto',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white,
+                                      fontSize:
+                                          MediaQuery.of(context).size.width *
+                                          0.034,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          children: [
-                            ElevatedButton(
-                              onPressed: () {},
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                side: const BorderSide(
-                                  color: Colors.white,
-                                  width: 1,
-                                ),
-                                shape: const CircleBorder(),
-                                padding: EdgeInsets.all(
-                                  MediaQuery.of(context).size.width * 0.04,
-                                ),
-                              ),
-                              child: Icon(
-                                Icons.cast_connected_sharp,
-                                color: Colors.white,
-                                size: MediaQuery.of(context).size.width * 0.06,
-                              ),
-                            ),
-                            SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.01,
-                            ),
-                            Text(
-                              'Connect',
-                              style: GoogleFonts.poppins(
-                                color: Colors.white,
-                                fontSize:
-                                    MediaQuery.of(context).size.width * 0.035,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.04),
-                    // Live Crypto Prices Horizontal List
-                    isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : SizedBox(
+                            ],
+                          ),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.04,
+                          ),
+                          // Live Crypto Prices Horizontal List
+                          SizedBox(
                             height: MediaQuery.of(context).size.height * 0.15,
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
@@ -1238,12 +1658,16 @@ class _HomescreenState extends State<Homescreen> {
                               },
                             ),
                           ),
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-                    // Portfolio Section
-                    TransactionsScreen(),
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.02),
-                  ],
-                ),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.03,
+                          ),
+                          // Portfolio Section
+                          TransactionsScreen(),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.02,
+                          ),
+                        ],
+                      ),
               ),
             ),
           ),

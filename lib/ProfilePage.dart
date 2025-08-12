@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:coincraze/AuthManager.dart';
-import 'dart:io';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -119,54 +118,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           SizedBox(height: 32),
-          ListTile(
-            leading: Icon(Icons.person),
-            title: Text('Edit Profile'),
-            trailing: Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              // Navigate to edit profile screen
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.payment),
-            title: Text('Payment Method'),
-            trailing: Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              // Navigate to payment method screen
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.language),
-            title: Text('Language'),
-            trailing: Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              // Navigate to language settings
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.history),
-            title: Text('Order History'),
-            trailing: Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              // Navigate to order history
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.person_add),
-            title: Text('Invite Friends'),
-            trailing: Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              // Navigate to invite friends
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.help),
-            title: Text('Help Center'),
-            trailing: Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              // Navigate to help center
-            },
-          ),
+          // ListTile(
+          //   leading: Icon(Icons.person),
+          //   title: Text('Edit Profile'),
+          //   trailing: Icon(Icons.arrow_forward_ios),
+          //   onTap: () {
+          //     // Navigate to edit profile screen
+          //   },
+          // ),
+          // ListTile(
+          //   leading: Icon(Icons.payment),
+          //   title: Text('Payment Method'),
+          //   trailing: Icon(Icons.arrow_forward_ios),
+          //   onTap: () {
+          //     // Navigate to payment method screen
+          //   },
+          // ),
+          // ListTile(
+          //   leading: Icon(Icons.language),
+          //   title: Text('Language'),
+          //   trailing: Icon(Icons.arrow_forward_ios),
+          //   onTap: () {
+          //     // Navigate to language settings
+          //   },
+          // ),
+          // ListTile(
+          //   leading: Icon(Icons.history),
+          //   title: Text('Order History'),
+          //   trailing: Icon(Icons.arrow_forward_ios),
+          //   onTap: () {
+          //     // Navigate to order history
+          //   },
+          // ),
+          // ListTile(
+          //   leading: Icon(Icons.person_add),
+          //   title: Text('Invite Friends'),
+          //   trailing: Icon(Icons.arrow_forward_ios),
+          //   onTap: () {
+          //     // Navigate to invite friends
+          //   },
+          // ),
+          // ListTile(
+          //   leading: Icon(Icons.help),
+          //   title: Text('Help Center'),
+          //   trailing: Icon(Icons.arrow_forward_ios),
+          //   onTap: () {
+          //     // Navigate to help center
+          //   },
+         // ),
         ],
       ),
     );

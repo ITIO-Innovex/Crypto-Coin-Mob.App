@@ -15,7 +15,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.example.coincraze"
+    namespace = "com.itio.coincraze"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 
@@ -30,7 +30,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.coincraze"
+        applicationId = "com.itio.coincraze"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

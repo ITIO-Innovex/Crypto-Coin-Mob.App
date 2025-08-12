@@ -368,15 +368,27 @@ class _ChartScreenState extends State<ChartScreen>
       final stopPrice = double.tryParse(stopPriceController.text);
 
       if (amount <= 0) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Invalid amount')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              'Invalid amount',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        );
         return;
       }
 
       if (orderType == 'Limit' && (price == null || price <= 0)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Price is required for Limit orders')),
+          const SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              'Price is required for Limit orders',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
         );
         return;
       }
@@ -388,8 +400,10 @@ class _ChartScreenState extends State<ChartScreen>
               stopPrice <= 0)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
+            backgroundColor: Colors.red,
             content: Text(
               'Price and stop price are required for Stop-Loss orders',
+              style: TextStyle(color: Colors.white),
             ),
           ),
         );
@@ -399,7 +413,11 @@ class _ChartScreenState extends State<ChartScreen>
       if (cryptoWalletId == null || fiatWalletId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Wallet data not loaded. Please try again.'),
+            backgroundColor: Colors.red,
+            content: Text(
+              'Wallet data not loaded. Please try again.',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         );
         await fetchWallets();

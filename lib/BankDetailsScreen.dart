@@ -50,7 +50,8 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
 
   String? selectedBank;
   final TextEditingController _ifscController = TextEditingController();
-  final TextEditingController _accountNumberController = TextEditingController();
+  final TextEditingController _accountNumberController =
+      TextEditingController();
 
   @override
   void dispose() {
@@ -63,14 +64,19 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
   Widget build(BuildContext context) {
     // Get screen size for responsive design
     final Size screenSize = MediaQuery.of(context).size;
-    final bool isSmallScreen = screenSize.width < 600; // Threshold for small screens
+    final bool isSmallScreen =
+        screenSize.width < 600; // Threshold for small screens
     final double padding = isSmallScreen ? 12.0 : 16.0;
     final double fontScale = isSmallScreen ? 0.9 : 1.0;
 
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black, size: 24 * fontScale),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.black,
+            size: 24 * fontScale,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -100,9 +106,13 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildStep(context, "Personal info", true, 1, fontScale),
-                  Expanded(child: _buildProgressLine(1.0, screenSize.width * 0.3)),
+                  Expanded(
+                    child: _buildProgressLine(1.0, screenSize.width * 0.3),
+                  ),
                   _buildStep(context, "ID proof", true, 2, fontScale),
-                  Expanded(child: _buildProgressLine(1.0, screenSize.width * 0.3)),
+                  Expanded(
+                    child: _buildProgressLine(1.0, screenSize.width * 0.3),
+                  ),
                   _buildStep(context, "Bank details", true, 3, fontScale),
                 ],
               ),
@@ -146,20 +156,31 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                         _accountNumberController.text.isEmpty ||
                         _ifscController.text.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please fill all fields')),
+                        const SnackBar(
+                          content: Text(
+                            'Please fill all fields',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
                       );
                       return;
                     }
                     // Handle KYC submission
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('KYC Submitted Successfully!')),
+                      const SnackBar(
+                        content: Text('KYC Submitted Successfully!', style: TextStyle(color: Colors.white)),
+                      ),
                     );
                     Navigator.popUntil(context, (route) => route.isFirst);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.black ?? const Color.fromARGB(255, 11, 11, 11),
+                    backgroundColor:
+                        AppColors.black ??
+                        const Color.fromARGB(255, 11, 11, 11),
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 14 : 18),
+                    padding: EdgeInsets.symmetric(
+                      vertical: isSmallScreen ? 14 : 18,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -198,12 +219,20 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
     );
   }
 
-  Widget _buildStep(BuildContext context, String title, bool isActive, int stepNumber, double fontScale) {
+  Widget _buildStep(
+    BuildContext context,
+    String title,
+    bool isActive,
+    int stepNumber,
+    double fontScale,
+  ) {
     return Column(
       children: [
         CircleAvatar(
           radius: 20 * fontScale,
-          backgroundColor: isActive ? (AppColors.black ?? Colors.green) : Colors.grey.shade300,
+          backgroundColor: isActive
+              ? (AppColors.black ?? Colors.green)
+              : Colors.grey.shade300,
           child: isActive
               ? Icon(Icons.check, color: Colors.white, size: 24 * fontScale)
               : Text(
@@ -311,10 +340,7 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
       items: bankIfscMap.keys.map((String bank) {
         return DropdownMenuItem<String>(
           value: bank,
-          child: Text(
-            bank,
-            style: TextStyle(fontSize: 14 * fontScale),
-          ),
+          child: Text(bank, style: TextStyle(fontSize: 14 * fontScale)),
         );
       }).toList(),
       onChanged: (String? newValue) {

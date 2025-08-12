@@ -44,16 +44,21 @@ class OrderData {
   });
 
   factory OrderData.fromJson(Map<String, dynamic> json) {
-    return OrderData(
-      coinName: json['coinName'],
-      orderType: json['orderType'],
-      side: json['side'],
-      amount: (json['amount'] as num).toDouble(),
-      price: (json['price'] as num).toDouble(),
-      stopPrice: json['stopPrice'] != null ? (json['stopPrice'] as num).toDouble() : null,
-      status: json['status'],
-      createdAt: DateTime.parse(json['createdAt']),
-      executedAt: json['executedAt'] != null ? DateTime.parse(json['executedAt']) : null,
-    );
+    try {
+      return OrderData(
+        coinName: json['coinName']?.toString() ?? '',
+        orderType: json['orderType']?.toString() ?? '',
+        side: json['side']?.toString() ?? '',
+        amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+        price: (json['price'] as num?)?.toDouble() ?? 0.0,
+        stopPrice: (json['stopPrice'] as num?)?.toDouble(),
+        status: json['status']?.toString() ?? '',
+        createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
+        executedAt: json['executedAt'] != null ? DateTime.tryParse(json['executedAt'].toString()) : null,
+      );
+    } catch (e) {
+      print('Error parsing OrderData: $e, JSON: $json');
+      rethrow;
+    }
   }
 }

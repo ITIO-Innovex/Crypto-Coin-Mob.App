@@ -3,7 +3,9 @@ import 'package:coincraze/CreateWallet.dart';
 import 'package:coincraze/Models/Wallet.dart';
 import 'package:coincraze/Screens/AddFundsScreen.dart';
 import 'package:coincraze/Screens/BuyCryptoScreen.dart';
+import 'package:coincraze/Screens/DetailsTransacitonScreen.dart';
 import 'package:coincraze/Screens/TransactionScreen.dart';
+import 'package:coincraze/Screens/Transactions.dart';
 import 'package:coincraze/Services/api_service.dart';
 import 'package:country_flags/country_flags.dart';
 import 'package:flutter/material.dart';
@@ -29,6 +31,7 @@ class _FiatWalletScreenState extends State<FiatWalletScreen>
     'JPY': 'assets/flags/Japan.png',
     'CAD': 'assets/flags/CAD.jpg',
     'AUD': 'assets/flags/australian-dollar.jpeg',
+    'JOD': 'assets/flags/JOD.jpg',
   };
 
   late Future<List<Wallet>> _walletsFuture;
@@ -183,55 +186,64 @@ class _FiatWalletScreenState extends State<FiatWalletScreen>
                         SizedBox(height: 20),
                         Center(
                           child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isLargeScreen ? 40 : 20,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                              vertical: 8,
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                _buildActionButton(
-                                  context: context,
-                                  label: 'Add New Wallet',
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            CreateWalletScreen(),
-                                      ),
-                                    );
-                                  },
-                                  isLargeScreen: isLargeScreen,
-                                ),
-                                SizedBox(width: 12),
-                                _buildActionButton(
-                                  context: context,
-                                  label: 'Buy Crypto',
-                                  onPressed: () async {
-                                    final prefs =
-                                        await SharedPreferences.getInstance();
-                                    final userId =
-                                        prefs.getString('userId') ?? '';
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => BuyCryptoScreen(
-                                          availableCurrencies:
-                                              availableCurrencies,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  isLargeScreen: isLargeScreen,
-                                ),
-                              ],
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final isNarrow = constraints.maxWidth < 400;
+                                return Wrap(
+                                  spacing: 12,
+                                  runSpacing: 12,
+                                  alignment: WrapAlignment.center,
+                                  children: [
+                                    _buildActionButton(
+                                      context: context,
+                                      label: 'Add New Wallet',
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                CreateWalletScreen(),
+                                          ),
+                                        );
+                                      },
+                                      isLargeScreen: !isNarrow,
+                                    ),
+                                    _buildActionButton(
+                                      context: context,
+                                      label: 'Buy Crypto',
+                                      onPressed: () async {
+                                        final prefs =
+                                            await SharedPreferences.getInstance();
+                                        final userId =
+                                            prefs.getString('userId') ?? '';
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                BuyCryptoScreen(
+                                                  availableCurrencies:
+                                                      availableCurrencies,
+                                                ),
+                                          ),
+                                        );
+                                      },
+                                      isLargeScreen: !isNarrow,
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
                           ),
                         ),
+
                         SizedBox(height: 30),
                         Padding(
                           padding: EdgeInsets.symmetric(
-                            horizontal: isLargeScreen ? 40 : 20,
+                            horizontal: isLargeScreen ? 30 : 20,
                             vertical: 16,
                           ),
                           child: Text(
@@ -549,7 +561,10 @@ class _FiatWalletScreenState extends State<FiatWalletScreen>
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color.fromARGB(255, 19, 20, 20), Color.fromARGB(255, 109, 112, 118)],
+                colors: [
+                  Color.fromARGB(255, 19, 20, 20),
+                  Color.fromARGB(255, 109, 112, 118),
+                ],
               ),
               borderRadius: BorderRadius.circular(15),
             ),
@@ -732,7 +747,7 @@ class _FiatWalletScreenState extends State<FiatWalletScreen>
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  TransactionHistoryScreen(userId: userId),
+                                  DetailsTransactionScreen(),
                             ),
                           );
                         },
@@ -782,7 +797,7 @@ class _FiatWalletScreenState extends State<FiatWalletScreen>
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.transparent,
             padding: EdgeInsets.symmetric(
-              horizontal: isLargeScreen ? 40 : 32,
+              horizontal: isLargeScreen ? 30 : 32,
               vertical: isLargeScreen ? 20 : 16,
             ),
             shape: RoundedRectangleBorder(
@@ -824,7 +839,10 @@ class _FiatWalletScreenState extends State<FiatWalletScreen>
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color.fromARGB(255, 17, 17, 18), Color.fromARGB(255, 89, 93, 107)],
+              colors: [
+                Color.fromARGB(255, 17, 17, 18),
+                Color.fromARGB(255, 89, 93, 107),
+              ],
             ),
           ),
           child: Icon(icon, color: Colors.white, size: isLargeScreen ? 34 : 25),
@@ -974,6 +992,7 @@ class _FiatWalletScreenState extends State<FiatWalletScreen>
       'JPY': 'JP',
       'CAD': 'CA',
       'AUD': 'AU',
+      'JOD': 'JO',
     };
     return currencyToCountry[currency] ?? 'UN';
   }

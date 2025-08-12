@@ -69,7 +69,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: const Text('Notifications', style: TextStyle(color: Colors.black),),
         backgroundColor: Colors.grey[100],
         elevation: 0,
         leading: IconButton(
@@ -80,7 +80,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _notifications.isEmpty
-          ? const Center(child: Text('No notifications found'))
+          ? const Center(child: Text('No notifications found', style: TextStyle(color: Colors.black),))
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: _notifications.length,

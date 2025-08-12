@@ -1,5 +1,6 @@
 import 'package:coincraze/CreateWallet.dart';
 import 'package:coincraze/WalletList.dart';
+import 'package:coincraze/utils/UnderProcess.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -112,7 +113,13 @@ class WalletScreen extends StatelessWidget {
                         title: 'Import a wallet',
                         subtitle:
                             'Enter your recovery phrase from another wallet',
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            CupertinoPageRoute(builder: (context) =>
+                                ComingSoonScreen()),
+                          );
+                        },
                       ),
                     ),
                   ],

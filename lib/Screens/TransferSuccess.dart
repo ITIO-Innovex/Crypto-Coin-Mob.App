@@ -1,3 +1,5 @@
+import 'package:coincraze/BottomBar.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
@@ -196,7 +198,7 @@ class _TransactionSuccessScreenState extends State<TransactionSuccessScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context);
+                    Navigator.pushReplacement(context, CupertinoPageRoute(builder: (context) =>  MainScreen(),));
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black87,

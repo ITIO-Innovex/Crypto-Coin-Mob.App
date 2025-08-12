@@ -180,6 +180,7 @@ class _CryptoWalletScreenState extends State<CryptoWalletScreen> {
   }
 
   Future<void> _createWallet(String coinName) async {
+    print('Creating wallet for coin: $coinName');
     setState(() => isLoading = true);
     try {
       final newWallet = await apiService.createWalletAddress(coinName);
@@ -345,10 +346,9 @@ class _CryptoWalletScreenState extends State<CryptoWalletScreen> {
                                       'Create button pressed for coin: $selectedCoin',
                                     );
                                     Navigator.pop(context);
-                                    final apiCoinName = selectedCoin == 'ETC'
-                                        ? 'ETC'
-                                        : mainnetToCoinName[selectedCoin] ??
-                                              selectedCoin!;
+                                    // Use the nativeAsset value directly (like DOGE_TEST)
+                                    final apiCoinName = selectedCoin!;
+                                    print('Using nativeAsset for wallet creation: $apiCoinName');
                                     await _createWallet(apiCoinName);
                                   },
                             style: ElevatedButton.styleFrom(

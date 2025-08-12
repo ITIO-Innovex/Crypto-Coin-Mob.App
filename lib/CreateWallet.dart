@@ -1,5 +1,5 @@
-
 import 'package:coincraze/Screens/FiatWalletScreen.dart';
+import 'package:coincraze/utils/CurrencySymbol.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:coincraze/Services/api_service.dart';
@@ -26,6 +26,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen>
     'JPY',
     'CAD',
     'AUD',
+    'JOD',
   ];
 
   @override
@@ -38,9 +39,10 @@ class _CreateWalletScreenState extends State<CreateWalletScreen>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
     );
-    _slideAnimation = Tween<Offset>(begin: Offset(0, 0.3), end: Offset.zero).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
+    _slideAnimation = Tween<Offset>(begin: Offset(0, 0.3), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+        );
     _animationController.forward();
   }
 
@@ -58,7 +60,10 @@ class _CreateWalletScreenState extends State<CreateWalletScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [const Color.fromARGB(255, 46, 46, 47), const Color.fromARGB(255, 206, 203, 207)],
+            colors: [
+              const Color.fromARGB(255, 46, 46, 47),
+              const Color.fromARGB(255, 206, 203, 207),
+            ],
           ),
         ),
         child: SafeArea(
@@ -139,23 +144,50 @@ class _CreateWalletScreenState extends State<CreateWalletScreen>
                               SizedBox(height: 24),
                               DropdownButtonFormField<String>(
                                 value: _selectedCurrency,
+                                style: const TextStyle(
+                                  // Selected text ka color force kar diya
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                ),
+                                dropdownColor:
+                                    Colors.white, // Dropdown list ka background
                                 decoration: InputDecoration(
                                   labelText: 'Currency',
-                                  prefixIcon: Icon(
-                                    Icons.monetization_on,
-                                    color: const Color.fromARGB(255, 10, 10, 10),
-                                  ),
+                                  labelStyle: const TextStyle(
+                                    color: Colors.black,
+                                  ), // Label ka color
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   filled: true,
                                   fillColor: Colors.grey[100],
                                 ),
-                                hint: Text('Select Currency'),
+                                hint: const Text(
+                                  'Select Currency',
+                                  style: TextStyle(color: Colors.black),
+                                ),
                                 items: _currencies.map((currency) {
+                                  final symbol = CurrencyHelper.getSymbol(
+                                    currency,
+                                  );
+                                  final flag = getFlagEmoji(currency);
                                   return DropdownMenuItem<String>(
                                     value: currency,
-                                    child: Text(currency),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          flag,
+                                          style: const TextStyle(fontSize: 18),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '$symbol $currency',
+                                          style: const TextStyle(
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   );
                                 }).toList(),
                                 onChanged: (value) {
@@ -170,30 +202,52 @@ class _CreateWalletScreenState extends State<CreateWalletScreen>
                                   return null;
                                 },
                               ),
+
                               SizedBox(height: 24),
                               Center(
                                 child: ElevatedButton(
                                   onPressed: () async {
                                     if (_formKey.currentState!.validate()) {
                                       try {
-                                        await ApiService().createWallet(_selectedCurrency!);
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        await ApiService().createWallet(
+                                          _selectedCurrency!,
+                                        );
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           SnackBar(
-                                            content: Text('Wallet created successfully!'),
+                                            content: Text(
+                                              'Wallet created successfully!',
+                                            ),
                                           ),
                                         );
-                                        Navigator.push(context, CupertinoPageRoute(builder: (context) => FiatWalletScreen(),));
+                                        Navigator.push(
+                                          context,
+                                          CupertinoPageRoute(
+                                            builder: (context) =>
+                                                FiatWalletScreen(),
+                                          ),
+                                        );
                                       } catch (e) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           SnackBar(
-                                            content: Text('Error creating wallet: $e'),
+                                            content: Text(
+                                              'Error creating wallet: $e',
+                                            ),
                                           ),
                                         );
                                       }
                                     }
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color.fromARGB(255, 10, 10, 10),
+                                    backgroundColor: const Color.fromARGB(
+                                      255,
+                                      10,
+                                      10,
+                                      10,
+                                    ),
                                     padding: EdgeInsets.symmetric(
                                       horizontal: 40,
                                       vertical: 16,

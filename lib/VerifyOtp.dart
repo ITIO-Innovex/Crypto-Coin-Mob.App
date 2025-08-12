@@ -1,16 +1,17 @@
-import 'package:coincraze/AuthManager.dart';
-
-import 'package:coincraze/LoginScreen.dart';
 import 'package:coincraze/UpdatePassword.dart';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:http/http.dart' as http;
 import 'package:pinput/pinput.dart';
+import 'dart:convert';
+
+import 'Constants/API.dart'; // Make sure this has BaseUrl
 
 class VerifyOtp extends StatefulWidget {
-  const VerifyOtp({super.key});
+  final String email;
+
+  const VerifyOtp({super.key, required this.email});
 
   @override
   State<VerifyOtp> createState() => _VerifyOtpState();
@@ -23,14 +24,6 @@ class _VerifyOtpState extends State<VerifyOtp>
   bool _isLoading = false;
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
-  final Email = AuthManager().email ?? 'Empty';
-
-  @override
-  void dispose() {
-    _pinController.dispose();
-    _pinFocusNode.dispose();
-    super.dispose();
-  }
 
   @override
   void initState() {
@@ -44,11 +37,76 @@ class _VerifyOtpState extends State<VerifyOtp>
           CurvedAnimation(parent: _animationController, curve: Curves.ease),
         );
     _animationController.forward();
-    _initAuthManager(); // Initialize AuthManager
   }
 
-  Future<void> _initAuthManager() async {
-    await AuthManager().init(); // Initialize Hive and load saved details
+  @override
+  void dispose() {
+    _pinController.dispose();
+    _pinFocusNode.dispose();
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _verifyOtp() async {
+    final otp = _pinController.text.trim();
+
+    if (otp.length != 4) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid 4-digit OTP'),
+          backgroundColor: Color(0xFFD1493B),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse('$ProductionBaseUrl/api/auth/verify-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': widget.email, 'otp': otp}),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('OTP Verified Successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to UpdatePassword screen and pass email
+        Navigator.pushReplacement(
+          context,
+          CupertinoPageRoute(
+            builder: (context) => UpdatePassword(email: widget.email),
+          ),
+        );
+      } else {
+        final error = json.decode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error['error'] ?? 'Invalid OTP'),
+            backgroundColor: const Color(0xFFD1493B),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: const Color(0xFFD1493B),
+        ),
+      );
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
@@ -56,55 +114,54 @@ class _VerifyOtpState extends State<VerifyOtp>
     final defaultPinTheme = PinTheme(
       width: 50,
       height: 50,
-      textStyle: TextStyle(fontSize: 20, color: Colors.black),
+      textStyle: const TextStyle(fontSize: 20, color: Colors.black),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey),
         borderRadius: BorderRadius.circular(8),
       ),
     );
+
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color.fromARGB(255, 3, 4, 4), Colors.white],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      body: SizedBox.expand(
+        // ✅ Makes gradient fill entire screen
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color.fromARGB(255, 3, 4, 4), Colors.white],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
-        ),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: Column(
-            children: [
-              // Curved Container with Background Image
-              ClipPath(
-                clipper: CurvedClipper(),
-                child: Container(
-                  height: 300,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage('assets/images/e.jpg'),
-                      fit: BoxFit.cover,
-                      colorFilter: ColorFilter.mode(
-                        Colors.black.withOpacity(0.7),
-                        BlendMode.darken,
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                ClipPath(
+                  clipper: CurvedClipper(),
+                  child: Container(
+                    height: 300,
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage('assets/images/e.jpg'),
+                        fit: BoxFit.cover,
+                        colorFilter: ColorFilter.mode(
+                          Colors.black.withOpacity(0.7),
+                          BlendMode.darken,
+                        ),
                       ),
                     ),
-                  ),
-                  child: Center(
-                    child: SlideTransition(
-                      position: _slideAnimation,
-                      child: Image.asset(
-                        'assets/images/whtLogo.png',
-                        width: 260,
+                    child: Center(
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: Image.asset(
+                          'assets/images/whtLogo.png',
+                          width: 260,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              SafeArea(
-                top: false,
-                child: Padding(
+                Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 32.0,
                     vertical: 10.0,
@@ -116,7 +173,6 @@ class _VerifyOtpState extends State<VerifyOtp>
                         position: _slideAnimation,
                         child: Text(
                           "Password Reset",
-                          textAlign: TextAlign.center,
                           style: GoogleFonts.poppins(
                             fontSize: 27.0,
                             fontWeight: FontWeight.bold,
@@ -127,27 +183,13 @@ class _VerifyOtpState extends State<VerifyOtp>
                       const SizedBox(height: 10),
                       SlideTransition(
                         position: _slideAnimation,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "We sent a code to",
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.poppins(
-                                fontSize: 14.0,
-                                color: Colors.white,
-                              ),
-                            ),
-                            SizedBox(width: 10,),
-                             Text(
-                             '$Email!',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.poppins(
-                                fontSize: 14.0,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          "We sent a code to ${widget.email}",
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14.0,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 30.0),
@@ -158,20 +200,14 @@ class _VerifyOtpState extends State<VerifyOtp>
                           controller: _pinController,
                           focusNode: _pinFocusNode,
                           defaultPinTheme: defaultPinTheme,
-                          separatorBuilder: (index) => SizedBox(width: 10),
+                          separatorBuilder: (index) =>
+                              const SizedBox(width: 10),
                           onCompleted: (pin) {
-                            // Handle OTP completion if needed
-                            print('OTP entered: $pin');
-                          },
-                          onChanged: (value) {
-                            if (value.length == 4) {
-                              _pinFocusNode.unfocus();
-                            }
+                            _pinFocusNode.unfocus();
                           },
                           keyboardType: TextInputType.number,
                         ),
                       ),
-
                       const SizedBox(height: 16.0),
                       SlideTransition(
                         position: _slideAnimation,
@@ -182,16 +218,9 @@ class _VerifyOtpState extends State<VerifyOtp>
                                 ),
                               )
                             : ElevatedButton(
-                                onPressed: () {
-                                  Navigator.push(context, CupertinoPageRoute(builder: (context) => UpdatePassword(),));
-                                },
+                                onPressed: _verifyOtp,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color.fromARGB(
-                                    255,
-                                    0,
-                                    0,
-                                    0,
-                                  ),
+                                  backgroundColor: Colors.black,
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 32.0,
                                     vertical: 16.0,
@@ -211,47 +240,38 @@ class _VerifyOtpState extends State<VerifyOtp>
                                 ),
                               ),
                       ),
-                      const SizedBox(height: 40.0),
-                      SlideTransition(
-                        position: _slideAnimation,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  CupertinoPageRoute(
-                                    builder: (context) => const LoginScreen(),
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                'Dont Recieve the email?',
+                      const SizedBox(height: 30.0),
+                      TextButton(
+                        onPressed: () {
+                          // Optionally re-send OTP
+                          Navigator.pop(context);
+                        },
+                        child: RichText(
+                          text: TextSpan(
+                            style: GoogleFonts.poppins(
+                              fontSize: 13.0,
+                              color: Colors.black,
+                            ),
+                            children: [
+                              const TextSpan(text: "Didn't receive the code? "),
+                              TextSpan(
+                                text: " Resend",
                                 style: GoogleFonts.poppins(
-                                  fontSize: 13.0,
-                                  color: const Color.fromARGB(255, 11, 11, 11),
-                                  fontWeight: FontWeight.normal,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  decoration: TextDecoration.none,
                                 ),
                               ),
-                            ),
-                            SizedBox(width: 10),
-                            Text(
-                              'Click To Resend',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14.0,
-                                color: const Color.fromARGB(255, 11, 11, 11),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -1,4 +1,4 @@
-package com.example.coincraze
+package com.itio.coincraze
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

@@ -480,93 +480,93 @@ class _LoginScreenState extends State<LoginScreen>
                               ],
                             ),
                     ),
-                    SizedBox(height: screenHeight * 0.02),
-                    SlideTransition(
-                      position: _slideAnimation,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Divider(color: Colors.blue,),
-                          Text(
-                            '-----------  OR LOGIN WITH  ----------',
-                            style: GoogleFonts.poppins(
-                              fontSize: isTablet ? 16.0 : 14.0,
-                              color: Colors.grey[400],
-                            ),
-                          ),
-                          Divider(color: Colors.blue,),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: screenHeight * 0.015),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(
-                          0.3,
-                        ), 
-                        borderRadius: BorderRadius.circular(20)// Semi-transparent white background
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(5.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SlideTransition(
-                              position: _slideAnimation,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: () => _handleSocialLogin('apple'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.black,
-                                      shape: const CircleBorder(),
-                                      padding: const EdgeInsets.all(12),
-                                    ),
-                                    child: const Icon(
-                                      Icons.apple,
-                                      color: Colors.white,
-                                      size: 18,
-                                    ),
-                                  ),
-                                  SizedBox(width: screenWidth * 0.04),
-                                  ElevatedButton(
-                                    onPressed: () => _handleSocialLogin('google'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.white,
-                                      shape: const CircleBorder(),
-                                      padding: const EdgeInsets.all(12),
-                                    ),
-                                    child: Image.asset(
-                                      'assets/images/google_logo.png', // Add Google icon asset
-                                      width: 18,
-                                      height: 18,
-                                    ),
-                                  ),
-                                  SizedBox(width: screenWidth * 0.04),
-                                  ElevatedButton(
-                                    onPressed: () =>
-                                        _handleSocialLogin('facebook'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF1877F2),
-                                      shape: const CircleBorder(),
-                                      padding: const EdgeInsets.all(12),
-                                    ),
-                                    child: const Icon(
-                                      Icons.facebook,
-                                      color: Colors.white,
-                                      size: 18,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                  // SizedBox(height: screenHeight * 0.02),
+                    // SlideTransition(
+                    //   position: _slideAnimation,
+                    //   child: Row(
+                    //     mainAxisAlignment: MainAxisAlignment.center,
+                    //     children: [
+                    //       Divider(color: Colors.blue,),
+                    //       Text(
+                    //         '-----------  OR LOGIN WITH  ----------',
+                    //         style: GoogleFonts.poppins(
+                    //           fontSize: isTablet ? 16.0 : 14.0,
+                    //           color: Colors.grey[400],
+                    //         ),
+                    //       ),
+                    //       Divider(color: Colors.blue,),
+                    //     ],
+                    //   ),
+                    // ),
+                    // SizedBox(height: screenHeight * 0.015),
+                    // Container(
+                    //   decoration: BoxDecoration(
+                    //     color: Colors.white.withOpacity(
+                    //       0.3,
+                    //     ), 
+                    //     borderRadius: BorderRadius.circular(20)// Semi-transparent white background
+                    //   ),
+                    //   child: Padding(
+                    //     padding: const EdgeInsets.all(5.0),
+                    //     child: Row(
+                    //       mainAxisAlignment: MainAxisAlignment.center,
+                    //       children: [
+                    //         SlideTransition(
+                    //           position: _slideAnimation,
+                    //           child: Row(
+                    //             mainAxisAlignment: MainAxisAlignment.center,
+                    //             children: [
+                    //               ElevatedButton(
+                    //                 onPressed: () => _handleSocialLogin('apple'),
+                    //                 style: ElevatedButton.styleFrom(
+                    //                   backgroundColor: Colors.black,
+                    //                   shape: const CircleBorder(),
+                    //                   padding: const EdgeInsets.all(12),
+                    //                 ),
+                    //                 child: const Icon(
+                    //                   Icons.apple,
+                    //                   color: Colors.white,
+                    //                   size: 18,
+                    //                 ),
+                    //               ),
+                    //               SizedBox(width: screenWidth * 0.04),
+                    //               ElevatedButton(
+                    //                 onPressed: () => _handleSocialLogin('google'),
+                    //                 style: ElevatedButton.styleFrom(
+                    //                   backgroundColor: Colors.white,
+                    //                   shape: const CircleBorder(),
+                    //                   padding: const EdgeInsets.all(12),
+                    //                 ),
+                    //                 child: Image.asset(
+                    //                   'assets/images/google_logo.png', // Add Google icon asset
+                    //                   width: 18,
+                    //                   height: 18,
+                    //                 ),
+                    //               ),
+                    //               SizedBox(width: screenWidth * 0.04),
+                    //               ElevatedButton(
+                    //                 onPressed: () =>
+                    //                     _handleSocialLogin('facebook'),
+                    //                 style: ElevatedButton.styleFrom(
+                    //                   backgroundColor: const Color(0xFF1877F2),
+                    //                   shape: const CircleBorder(),
+                    //                   padding: const EdgeInsets.all(12),
+                    //                 ),
+                    //                 child: const Icon(
+                    //                   Icons.facebook,
+                    //                   color: Colors.white,
+                    //                   size: 18,
+                    //                 ),
+                    //               ),
+                    //             ],
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
+                    // ),
 
-                    SizedBox(height: screenHeight * 0.04),
+                    SizedBox(height: screenHeight * 0.01),
                     SlideTransition(
                       position: _slideAnimation,
                       child: Row(
@@ -576,7 +576,7 @@ class _LoginScreenState extends State<LoginScreen>
                             "Don't have an account? ",
                             style: GoogleFonts.poppins(
                               fontSize: isTablet ? 16.0 : 14.0,
-                              color: Colors.grey[600],
+                              color: const Color.fromARGB(255, 228, 221, 221),
                             ),
                           ),
                           GestureDetector(
@@ -589,11 +589,11 @@ class _LoginScreenState extends State<LoginScreen>
                               );
                             },
                             child: Text(
-                              'Sign Up',
+                              ' Sign Up',
                               style: GoogleFonts.poppins(
-                                fontSize: isTablet ? 16.0 : 14.0,
+                                fontSize: isTablet ? 16.0 : 16.0,
                                 color: const Color.fromARGB(255, 250, 249, 249),
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),

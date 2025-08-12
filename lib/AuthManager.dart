@@ -214,7 +214,7 @@ class AuthManager {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$ProductionBaseUrl/upload-profile-picture'),
+        Uri.parse('$ProductionBaseUrl/api/profile/upload-profile-picture'),
       );
       request.fields['userId'] = userId;
       request.files.add(await http.MultipartFile.fromPath('profilePicture', filePath));

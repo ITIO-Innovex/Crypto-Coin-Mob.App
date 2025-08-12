@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:barcode_scan2/barcode_scan2.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class QRScanPage extends StatefulWidget {
   const QRScanPage({super.key});
@@ -24,18 +25,28 @@ class _QRScanPageState extends State<QRScanPage> {
 
   Future<void> _checkPermission() async {
     var status = await Permission.camera.request();
-    if (status.isGranted) {
-      print('Camera permission granted');
-    } else {
-      print('Camera permission denied or restricted: $status');
-    }
     setState(() {
       isPermissionGranted = status.isGranted;
     });
+
     if (!isPermissionGranted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Camera permission denied')),
       );
+    }
+  }
+
+  bool _isValidURL(String input) {
+    final Uri? uri = Uri.tryParse(input);
+    return uri != null && (uri.isScheme("http") || uri.isScheme("https"));
+  }
+
+  Future<void> _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      throw 'Could not launch $url';
     }
   }
 
@@ -50,7 +61,6 @@ class _QRScanPageState extends State<QRScanPage> {
     setState(() {
       isScanning = true;
     });
-    print('Starting QR scan...');
 
     try {
       var result = await BarcodeScanner.scan(
@@ -65,20 +75,23 @@ class _QRScanPageState extends State<QRScanPage> {
         ),
       );
 
-      print('Scan result: ${result.rawContent}');
-
       if (result.rawContent.isNotEmpty) {
         setState(() {
           scannedWalletAddress = result.rawContent;
         });
+
+        if (_isValidURL(result.rawContent)) {
+          await _launchURL(result.rawContent);
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Scanned: ${result.rawContent}')),
         );
+
         Future.delayed(const Duration(milliseconds: 300), () {
           Navigator.pop(context, scannedWalletAddress);
         });
       } else {
-        print('Scan cancelled or empty');
         setState(() {
           isScanning = false;
         });
@@ -87,7 +100,6 @@ class _QRScanPageState extends State<QRScanPage> {
         );
       }
     } catch (e) {
-      print('Error scanning QR code: $e');
       setState(() {
         isScanning = false;
       });
@@ -102,7 +114,6 @@ class _QRScanPageState extends State<QRScanPage> {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile == null) {
-      print('Gallery selection cancelled');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Image selection cancelled')),
       );
@@ -112,27 +123,29 @@ class _QRScanPageState extends State<QRScanPage> {
     setState(() {
       isScanning = true;
     });
-    print('Processing image from gallery: ${pickedFile.path}');
 
     try {
       var result = await BarcodeScanner.scan(
         options: ScanOptions(restrictFormat: [BarcodeFormat.qr]),
       );
 
-      print('Gallery scan result: ${result.rawContent}');
-
       if (result.rawContent.isNotEmpty) {
         setState(() {
           scannedWalletAddress = result.rawContent;
         });
+
+        if (_isValidURL(result.rawContent)) {
+          await _launchURL(result.rawContent);
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Scanned from gallery: ${result.rawContent}')),
         );
+
         Future.delayed(const Duration(milliseconds: 300), () {
           Navigator.pop(context, scannedWalletAddress);
         });
       } else {
-        print('No QR code found in image');
         setState(() {
           isScanning = false;
         });
@@ -141,7 +154,6 @@ class _QRScanPageState extends State<QRScanPage> {
         );
       }
     } catch (e) {
-      print('Error scanning image from gallery: $e');
       setState(() {
         isScanning = false;
       });

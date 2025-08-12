@@ -77,12 +77,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
     _pageController.jumpToPage(_pages.length - 1);
   }
 
-  void _navigateToSettings() {
-    Navigator.push(
-      context,
-      CupertinoPageRoute(builder: (context) => CryptoSettingsPage()),
-    );
-  }
+  // void _navigateToSettings() {
+  //   Navigator.push(
+  //     context,
+  //     CupertinoPageRoute(builder: (context) => CryptoSettingsPage()),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -103,18 +103,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
             ),
           ),
           // Settings button at top left
-          Positioned(
-            top: 40,
-            left: 16,
-            child: IconButton(
-              onPressed: _navigateToSettings,
-              icon: Icon(
-                Icons.settings,
-                color: Colors.black,
-                size: 28,
-              ),
-            ),
-          ),
+          // Positioned(
+          //   top: 40,
+          //   left: 16,
+          //   child: IconButton(
+          //     onPressed: _navigateToSettings,
+          //     icon: Icon(
+          //       Icons.settings,
+          //       color: Colors.black,
+          //       size: 28,
+          //     ),
+          //   ),
+          // ),
           // Skip button at top right
           Positioned(
             top: 40,

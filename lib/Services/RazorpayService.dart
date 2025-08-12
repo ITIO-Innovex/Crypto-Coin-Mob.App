@@ -1,9 +1,9 @@
-import 'dart:async';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'dart:async';
 
 class RazorpayService {
   late Razorpay _razorpay;
-  late Completer<void> _paymentCompleter;
+  late Completer<String?> _paymentCompleter;
 
   RazorpayService() {
     _razorpay = Razorpay();
@@ -13,7 +13,7 @@ class RazorpayService {
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    _paymentCompleter.complete();
+    _paymentCompleter.complete(response.paymentId);
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
@@ -23,16 +23,18 @@ class RazorpayService {
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
-    // Optionally handle external wallets
+    _paymentCompleter.completeError(
+      Exception('External wallet selected: ${response.walletName}'),
+    );
   }
 
-  Future<void> makePayment(
+  Future<String?> makePayment(
     String orderId,
     String key,
     double amount,
     String currency,
   ) async {
-    _paymentCompleter = Completer<void>();
+    _paymentCompleter = Completer<String?>();
 
     var options = {
       'key': key,
@@ -46,11 +48,11 @@ class RazorpayService {
 
     try {
       _razorpay.open(options);
+      return await _paymentCompleter.future;
     } catch (e) {
       _paymentCompleter.completeError(Exception('Payment launch failed: $e'));
+      rethrow;
     }
-
-    return _paymentCompleter.future;
   }
 
   void dispose() {

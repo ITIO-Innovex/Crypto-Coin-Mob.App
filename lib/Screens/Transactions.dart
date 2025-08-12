@@ -46,76 +46,87 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       }
     }
   }
+void showTransactionDetails(BuildContext context, Transactions transaction) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: const Color.fromARGB(255, 36, 34, 43),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      title: Text(
+        '${transaction.type} Details',
+        style: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDetailRow('Transaction ID:', transaction.id.toString()),
+            _buildDetailRow('User ID:', transaction.userId.toString()),
+            const Divider(color: Colors.grey),
 
-  void showTransactionDetails(BuildContext context, Transactions transaction) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color.fromARGB(255, 36, 34, 43),
-        title: Text(
-          '${transaction.type} Details',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+            _buildDetailRow('Amount:', '${transaction.amount} ${transaction.currency}'),
+            _buildDetailRow('Type:', transaction.type),
+            _buildDetailRow('Status:', transaction.status),
+            const Divider(color: Colors.grey),
+
+            _buildDetailRow('Gateway:', transaction.gateway),
+            // _buildDetailRow('Gateway ID:', transaction.gatewayId),
+            // _buildDetailRow('Wallet Type:', transaction.walletType),
+            const Divider(color: Colors.grey),
+
+            _buildDetailRow(
+              'Date:',
+              DateFormat('yyyy-MM-dd HH:mm').format(transaction.createdAt),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(
+            'Close',
+            style: GoogleFonts.poppins(color: Colors.blue),
           ),
         ),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'ID: ${transaction.id}',
-                style: GoogleFonts.poppins(color: Colors.white),
-              ),
-              Text(
-                'User ID: ${transaction.userId}',
-                style: GoogleFonts.poppins(color: Colors.white),
-              ),
-              Text(
-                'Amount: ${transaction.amount} ${transaction.currency}',
-                style: GoogleFonts.poppins(color: Colors.white),
-              ),
-              Text(
-                'Type: ${transaction.type}',
-                style: GoogleFonts.poppins(color: Colors.white),
-              ),
-              Text(
-                'Status: ${transaction.status}',
-                style: GoogleFonts.poppins(color: Colors.white),
-              ),
-              Text(
-                'Gateway: ${transaction.gateway}',
-                style: GoogleFonts.poppins(color: Colors.white),
-              ),
-              Text(
-                'Gateway ID: ${transaction.gateway}',
-                style: GoogleFonts.poppins(color: Colors.white),
-              ),
-              Text(
-                'Wallet Type: ${transaction.walletType}',
-                style: GoogleFonts.poppins(color: Colors.white),
-              ),
-              Text(
-                'Date: ${DateFormat('yyyy-MM-dd HH:mm').format(transaction.createdAt)}',
-                style: GoogleFonts.poppins(color: Colors.white),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Close',
-              style: GoogleFonts.poppins(color: Colors.blue),
+      ],
+    ),
+  );
+}
+
+Widget _buildDetailRow(String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4.0),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 3,
+          child: Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[300],
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+        Expanded(
+          flex: 5,
+          child: Text(
+            value,
+            style: GoogleFonts.poppins(color: Colors.white),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +140,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Transactions',
+            'Transactions Details',
             style: GoogleFonts.poppins(
               fontSize: 18.0,
               fontWeight: FontWeight.bold,
